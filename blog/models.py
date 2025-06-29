@@ -15,7 +15,7 @@ class Blog(models.Model):
     written_date = models.DateField(default=timezone.now)
     
     def save(self, *args, **kwargs):
-        # title을 4개 구성요소의 랜덤 조합으로 생성
+        # title을 4개 구성요소의 랜덤 조합으로 생성11
         if not self.title:
             components = [
                 self.content_title,
