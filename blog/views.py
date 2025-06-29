@@ -19,7 +19,7 @@ def blog_list_completed(request):
 def blog_list_pending(request):
     """블로그 목록 페이지 - blog_write가 False인 작성 대기 중인 글만 표시"""
     blogs_pending = Blog.objects.filter(blog_write=False).select_related('client').order_by('-written_date')
-    return render(request, 'blog/list_pending.html', {'blogs': blogs_pending, 'list_title': '작성 대기 중인 블로그 글'})
+    return render(request, 'blog/list_pending.html', {'blogs': blogs_pending, 'list_title': '트래픽용 제목'})
 
 
 def blog_write(request):
