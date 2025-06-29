@@ -10,21 +10,45 @@
         <div>
             <a href="{% url 'blog_write' %}" class="btn btn-primary me-2">새 블로그 작성</a>
             <a href="{% url 'blog_list_pending' %}" class="btn btn-info">작성 대기 중인 글 보기</a>
+            <a href="{% url 'blog_list_completed' %}" class="btn btn-success">작성 완료된 글 보기</a>
         </div>
     </div>
 
     {% if blogs %}
-    <div class="row row-cols-1 row-cols-md-2 g-4">
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4"> {# Added row-cols-lg-3 for 3-column layout on large screens #}
         {% for blog in blogs %}
         <div class="col">
             <div class="card h-100 shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">{{ blog.b_title }}</h5>
+                <div class="card-body d-flex flex-column"> {# Use flex-column for better alignment of elements #}
+                    <div class="d-flex justify-content-between align-items-start mb-2"> {# Align title and copy button #}
+                        <h5 class="card-title mb-0 me-2 flex-grow-1">
+                            {# Display b_title and provide an ID for copying #}
+                            <span id="blog-title-{{ blog.pk }}">{{ blog.b_title }}</span>
+                        </h5>
+                        <button type="button" 
+                                class="btn btn-sm btn-outline-secondary copy-btn" 
+                                data-blog-id="{{ blog.pk }}" 
+                                data-bs-toggle="tooltip" 
+                                data-bs-placement="top" 
+                                title="클립보드에 제목 복사">
+                            📋 복사
+                        </button>
+                    </div>
+                    
+                    {% if blog.client %}
+                    <p class="card-text text-muted mb-2">
+                        <small>클라이언트: {{ blog.client.name }}</small>
+                    </p>
+                    {% endif %}
+
                     <p class="card-text text-muted mb-2">
                         <small>📅 {{ blog.written_date|date:"Y-m-d" }}</small><br>
                         <small>📍 {{ blog.place_name }}</small>
                     </p>
-                    <div class="d-flex justify-content-between align-items-center">
+                    
+                    {# Add a "자세히 보기" button #}
+                    <div class="mt-auto d-flex justify-content-between align-items-center">
+                        <a href="{% url 'blog_detail' blog.pk %}" class="btn btn-sm btn-outline-primary">자세히 보기</a>
                         <form action="{% url 'blog_delete' blog.pk %}" method="post" class="d-inline">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('정말로 이 블로그 글을 삭제하시겠습니까?');">삭제</button>
@@ -36,7 +60,62 @@
         {% endfor %}
     </div>
     {% else %}
-    <p class="alert alert-info">작성 완료된 블로그 글이 없습니다.</p>
+    <p class="alert alert-info">블로그 글이 없습니다.</p>
     {% endif %}
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize tooltips (requires Bootstrap JS and Popper.js)
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+      return new bootstrap.Tooltip(tooltipTriggerEl)
+    });
+
+    const copyButtons = document.querySelectorAll('.copy-btn');
+
+    copyButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const blogId = this.dataset.blogId;
+            const titleElement = document.getElementById(`blog-title-${blogId}`);
+            const titleToCopy = titleElement ? titleElement.textContent : '';
+
+            if (titleToCopy) {
+                // Use the modern Clipboard API
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(titleToCopy).then(() => {
+                        const originalText = button.innerHTML;
+                        button.innerHTML = '✅ 복사됨!';
+                        setTimeout(() => {
+                            button.innerHTML = originalText;
+                        }, 1500); // Change back after 1.5 seconds
+                    }).catch(err => {
+                        console.error('Failed to copy text: ', err);
+                        alert('제목 복사에 실패했습니다.');
+                    });
+                } else {
+                    // Fallback for older browsers
+                    const textArea = document.createElement('textarea');
+                    textArea.value = titleToCopy;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    try {
+                        document.execCommand('copy');
+                        const originalText = button.innerHTML;
+                        button.innerHTML = '✅ 복사됨!';
+                        setTimeout(() => {
+                            button.innerHTML = originalText;
+                        }, 1500);
+                    } catch (err) {
+                        console.error('Fallback: Failed to copy text: ', err);
+                        alert('제목 복사에 실패했습니다.');
+                    } finally {
+                        document.body.removeChild(textArea);
+                    }
+                }
+            }
+        });
+    });
+});
+</script>
 {% endblock %}
