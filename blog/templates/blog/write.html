@@ -10,7 +10,7 @@
 <form method="post">
     {% csrf_token %}
 
-    {# 클라이언트 선택 드롭다운 추가 #}
+    {# 클라이언트 선택 드롭다운 #}
     <div class="mb-3">
         <label for="{{ form.client.id_for_label }}" class="form-label">{{ form.client.label }}</label>
         {{ form.client }}
@@ -19,6 +19,15 @@
                 {% for error in form.client.errors %}{{ error }}{% endfor %}
             </div>
         {% endif %}
+    </div>
+
+    {# 조합된 제목 표시 영역 추가 #}
+    <div class="mb-3">
+        <label class="form-label">✨ 생성될 제목 미리보기</label>
+        <div class="title-preview border rounded p-3 bg-light">
+            <h4 class="mb-0 text-primary">{{ generated_title }}</h4>
+            <small class="text-muted">이 제목은 글 저장 시 자동으로 결정됩니다.</small>
+        </div>
     </div>
 
     <div class="mb-3">
@@ -31,22 +40,14 @@
         {% endif %}
     </div>
 
-    {# image_url은 이제 Client 모델에서 가져오므로 여기서는 제거됩니다. #}
-    {# client_type도 Client 모델에서 선택되므로 여기서는 제거됩니다. #}
-
-    <div class="mb-3">
-        <label for="{{ form.place_name.id_for_label }}" class="form-label">{{ form.place_name.label }}</label>
-        {{ form.place_name }}
-        {% if form.place_name.errors %}
-            <div class="text-danger small mt-1">
-                {% for error in form.place_name.errors %}{{ error }}{% endfor %}
-            </div>
-        {% endif %}
-    </div>
-
-    {# content_title, content_number_character, content_talkstyle, content_aspect 입력 필드는 여기서 제거됩니다. #}
-    {# 이 필드들은 이제 Admin 페이지에서 미리 입력해두는 용도로만 사용됩니다. #}
-
+    {# 'place_name', 'image_url', 'client_type' 입력 필드는 여기서는 제거됩니다. #}
+    {# 'image_url' 및 'client_type'은 Client 모델에서 관리됩니다. #}
+    {# 'place_name'은 Blog 모델에 남아있지만, write.html 에서는 직접 입력받지 않습니다. #}
+    {# 필요하다면 Blog 모델의 place_name 필드에 default 값을 주거나, blank=True, null=True를 설정하여 필수로 입력하지 않도록 할 수 있습니다. #}
+    {# Admin 페이지를 통해서만 place_name을 입력하거나, DB에 저장될 때 빈 문자열로 두어도 됩니다. #}
+    {# 현재 BlogForm에서는 place_name이 제거되었으므로, 해당 필드에 값을 저장하려면 다른 방식이 필요합니다. #}
+    {# 만약 place_name이 write 페이지에서 입력이 필요없다면, Blog 모델에서도 blank=True를 주어 필수 필드에서 제외하는 것이 좋습니다. #}
+    
     <button type="submit" class="btn btn-success mt-3">저장하기</button>
 </form>
 {% endblock %}

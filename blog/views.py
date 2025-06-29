@@ -1,36 +1,54 @@
 # blog/views.py
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import Blog, Client # Client 모델 임포트
+from .models import Blog, Client, ContentSubhead, NumberCharacter, TalkStyle, ContentAspect
 from .forms import BlogForm
-# import json # 더 이상 generate_title_preview가 필요 없으므로 제거
+import random # random 모듈 임포트
 
 def blog_list(request):
     """블로그 목록 페이지"""
-    blogs = Blog.objects.all().select_related('client') # Client 정보도 함께 가져옴 (성능 최적화)
+    blogs = Blog.objects.all().select_related('client')
     return render(request, 'blog/list.html', {'blogs': blogs})
 
 def blog_write(request):
     """블로그 작성 페이지"""
-    print("DEBUG: blog_write view called!") # 이 줄 추가
     if request.method == 'POST':
-        print("DEBUG: Request method is POST.") # 이 줄 추가
         form = BlogForm(request.POST)
         if form.is_valid():
-            print("DEBUG: Form is valid.") # 이 줄 추가
-            blog = form.save()
-            print(f"DEBUG: Blog saved with ID: {blog.pk}") # 이 줄 추가
+            blog = form.save() # title은 Blog 모델의 save() 메서드에서 자동 생성됨
             return redirect('blog_list')
-        else:
-            print(f"DEBUG: Form is NOT valid. Errors: {form.errors}") # 이 줄 추가
     else:
-        print("DEBUG: Request method is GET. Displaying empty form.") # 이 줄 추가
         form = BlogForm()
+        
+        # GET 요청 시, 블로그 제목 구성 요소를 랜덤으로 가져와 조합
+        # NOTE: 이 부분은 폼이 초기화될 때만 실행되어야 하므로 POST 블록 밖에 둡니다.
+        
+        # Client를 선택하지 않을 수 있으므로, 모든 ContentSubhead에서 랜덤 선택
+        # 만약 특정 Client를 선택한 후에만 해당 Client의 subhead를 사용하고 싶다면,
+        # 이 로직을 프론트엔드 JavaScript (AJAX)로 구현해야 더 유연합니다.
+        # 현재는 모든 ContentSubhead 중에서 하나를 랜덤 선택합니다.
+        random_subhead = ContentSubhead.objects.order_by('?').first()
+        random_character = NumberCharacter.objects.order_by('?').first()
+        random_talkstyle = TalkStyle.objects.order_by('?').first()
+        random_aspect = ContentAspect.objects.order_by('?').first()
+
+        subhead_part = random_subhead.name if random_subhead else ""
+        char_part = random_character.name if random_character else ""
+        talk_part = random_talkstyle.name if random_talkstyle else ""
+        aspect_part = random_aspect.name if random_aspect else ""
+
+        # 제목 조합 (content_title 대신 subhead_part 사용)
+        generated_title = f"{subhead_part} {char_part} {talk_part} {aspect_part}".strip()
+        
+        # 템플릿으로 전달
+        return render(request, 'blog/write.html', {
+            'form': form,
+            'generated_title': generated_title # 조합된 제목을 템플릿으로 전달
+        })
     
-    return render(request, 'blog/write.html', {'form': form})
+    return render(request, 'blog/write.html', {'form': form}) # POST 실패시 폼 다시 보여줌
 
 def blog_detail(request, pk):
     """블로그 상세 페이지"""
-    blog = get_object_or_404(Blog.objects.select_related('client'), pk=pk) # Client 정보도 함께 가져옴
+    blog = get_object_or_404(Blog.objects.select_related('client'), pk=pk)
     return render(request, 'blog/detail.html', {'blog': blog})
 
-# generate_title_preview 뷰는 더 이상 필요 없으므로 제거합니다.

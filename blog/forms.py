@@ -1,12 +1,12 @@
 # blog/forms.py
 from django import forms
-from .models import Blog, Client # Client 모델 임포트
+from .models import Blog, Client
 
 class BlogForm(forms.ModelForm):
     class Meta:
         model = Blog
-        # content_title 등 제목 구성 요소 필드는 제거하고 client 필드 추가
-        fields = ['client', 'content', 'place_name'] # image_url, client_type은 Client 모델로 이동
+        # 'place_name' 필드를 fields 목록에서 제거
+        fields = ['client', 'content'] # image_url, client_type은 Client 모델로, place_name은 여기서 제거
         widgets = {
             'client': forms.Select(attrs={ # 클라이언트를 드롭다운으로 선택
                 'class': 'form-select',
@@ -16,15 +16,17 @@ class BlogForm(forms.ModelForm):
                 'rows': 10,
                 'placeholder': '1000자 이상의 내용을 입력하세요'
             }),
-            'place_name': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': '장소명'
-            }),
+            # 'place_name' 위젯 설정 제거
+            # 'place_name': forms.TextInput(attrs={
+            #     'class': 'form-control',
+            #     'placeholder': '장소명'
+            # }),
         }
         labels = {
             'client': '클라이언트',
             'content': '내용',
-            'place_name': '장소명',
+            # 'place_name' 라벨 설정 제거
+            # 'place_name': '장소명',
         }
     
     def __init__(self, *args, **kwargs):
