@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ blog.title }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <!-- 헤더 -->
+        <div class="d-flex justify-content-between align-items-start mb-4">
+            <div>
+                <h1 class="mb-2">{{ blog.title }}</h1>
+                <div class="text-muted">
+                    <span>📍 {{ blog.place_name }}</span> 
+                    <span class="mx-2">|</span>
+                    <span>📅 {{ blog.written_date|date:"Y년 m월 d일" }}</span>
+                    <span class="mx-2">|</span>
+                    <span>👤 {{ blog.client_type }}</span>
+                </div>
+            </div>
+            <a href="{% url 'blog_list' %}" class="btn btn-outline-secondary">
+                ⬅️ 목록으로
+            </a>
+        </div>
+        
+        <!-- 이미지 -->
+        {% if blog.image_url %}
+        <div class="text-center mb-4">
+            <img src="{{ blog.image_url }}" class="img-fluid rounded shadow" alt="{{ blog.title }}" style="max-height: 400px;">
+        </div>
+        {% endif %}
+        
+        <!-- 내용 -->
+        <div class="card">
+            <div class="card-body">
+                <div class="blog-content" style="line-height: 1.8; font-size: 1.1em;">
+                    {{ blog.content|linebreaks }}
+                </div>
+            </div>
+        </div>
+        
+        <!-- 메타 정보 -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="mb-0">📊 글 정보</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>컨텐츠 제목:</strong> {{ blog.content_title }}</p>
+                        <p><strong>글자 수 특성:</strong> {{ blog.content_number_character }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>말투 스타일:</strong> {{ blog.content_talkstyle }}</p>
+                        <p><strong>컨텐츠 관점:</strong> {{ blog.content_aspect }}</p>
+                    </div>
+                </div>
+                <hr>
+                <p class="mb-0"><strong>글자 수:</strong> {{ blog.content|length }}자</p>
+            </div>
+        </div>
+        
+        <!-- 네비게이션 -->
+        <div class="text-center mt-4">
+            <a href="{% url 'blog_list' %}" class="btn btn-primary">
+                📚 블로그 목록으로
+            </a>
+            <a href="{% url 'blog_write' %}" class="btn btn-outline-primary">
+                ✏️ 새 글 작성
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
