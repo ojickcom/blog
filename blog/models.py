@@ -65,7 +65,7 @@ class ContentAspect(models.Model):
         verbose_name_plural = "글의 대상"
 
 
-# Blog 모델 수정: b_title 필드 추가
+# Blog 모델 수정: blog_write 필드 추가
 class Blog(models.Model):
     client = models.ForeignKey(Client, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="클라이언트")
     
@@ -76,6 +76,9 @@ class Blog(models.Model):
     content = models.TextField(verbose_name="내용")
     place_name = models.CharField(max_length=200, default='온라인', verbose_name="장소명") # 기본값 설정
     written_date = models.DateTimeField(default=timezone.now, verbose_name="작성일")
+    
+    # 글작성 완료 여부를 나타내는 필드 추가
+    blog_write = models.BooleanField(default=False, verbose_name="글작성 완료")
 
     def __str__(self):
         return self.title if self.title else f"제목 없음 ({self.pk})"
@@ -107,4 +110,3 @@ class Blog(models.Model):
         ordering = ['-written_date']
         verbose_name = "블로그 게시물"
         verbose_name_plural = "블로그 게시물"
-

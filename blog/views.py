@@ -96,3 +96,11 @@ def blog_delete(request, pk):
     blog = get_object_or_404(Blog, pk=pk) # 해당 PK의 블로그 게시물을 가져오거나 404 에러 발생
     blog.delete() # 게시물 삭제
     return redirect('blog_list') # 삭제 후 블로그 목록 페이지로 리다이렉트
+
+@require_POST
+def blog_complete(request, pk):
+    """블로그 글작성 완료 처리 뷰"""
+    blog = get_object_or_404(Blog, pk=pk)
+    blog.blog_write = True
+    blog.save()
+    return JsonResponse({'status': 'success', 'message': '글작성이 완료되었습니다.'})
