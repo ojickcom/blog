@@ -5,6 +5,7 @@ from django.views.decorators.http import require_POST # POST 요청만 허용하
 from .models import Blog, Client, ContentSubhead, NumberCharacter, TalkStyle, ContentAspect
 from .forms import BlogForm
 import random
+from datetime import datetime  # 날짜 처리를 위해 추가
 
 def blog_list(request):
     """블로그 목록 페이지"""
@@ -16,7 +17,19 @@ def blog_write(request):
     if request.method == 'POST':
         form = BlogForm(request.POST)
         if form.is_valid():
-            blog = form.save() # title은 Blog 모델의 save() 메서드에서 자동 생성됨
+            blog = form.save(commit=False)  # 아직 DB에 저장하지 않음
+            
+            # 현재 날짜에서 월과 날 추출
+            now = datetime.now()
+            month = now.month  # 월 (숫자)
+            day = now.day      # 일 (숫자)
+            month_day = f"{month}월 {day}일"  # "6월 30일" 형식
+            
+            # b_title 필드값에 월/날 정보 덧붙이기
+            if blog.b_title:
+                blog.b_title = f"{blog.b_title} {month_day}"
+            
+            blog.save()  # 수정된 제목으로 저장
             return redirect('blog_list')
         else:
             # POST 요청이 유효하지 않을 경우, 폼과 함께 에러 메시지를 다시 렌더링
