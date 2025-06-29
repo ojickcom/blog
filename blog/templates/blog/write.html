@@ -22,7 +22,7 @@
     </div>
 
     {# 동적으로 업데이트될 제목 구성 요소 표시 영역 #}
-    <div class="mb-3 p-3 border rounded bg-light">
+    <div class="mb-3 p-3 border rounded bg-light" id="title-components-display"> {# Add ID here for easier selection #}
         <p class="mb-1 text-muted">아래 조합으로 블로그 포스팅 글을 작성해 보세요.</p>
         <p class="mb-1">
             <strong>글 주제: </strong> <span id="display-subhead" class="text-primary fw-bold">{{ generated_subhead }}</span>
@@ -37,6 +37,11 @@
             <strong>글의 대상: </strong> <span id="display-aspect" class="text-primary fw-bold">{{ generated_aspect }}</span>
         </p>
         <small class="text-muted mt-2 d-block">클라이언트 선택 시마다 내용이 랜덤으로 변경됩니다.</small>
+
+        {# 복사 버튼 추가 #}
+        <button type="button" id="copy-title-button" class="btn btn-sm btn-info mt-3">
+            📋 제목 조합 복사하기 <span id="copy-feedback" class="ms-2" style="display: none;">(복사됨!)</span>
+        </button>
     </div>
 
     <div class="mb-3">
@@ -59,10 +64,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const displayCharacter = document.getElementById('display-character');
     const displayTalkstyle = document.getElementById('display-talkstyle');
     const displayAspect = document.getElementById('display-aspect');
+    const copyButton = document.getElementById('copy-title-button');
+    const copyFeedback = document.getElementById('copy-feedback');
 
     // 랜덤 구성 요소를 가져와 업데이트하는 함수
     function updateRandomComponents() {
         const clientId = clientSelect.value;
+        // AJAX 요청 URL은 views.py의 get_random_title_components 뷰에 연결됩니다.
         const url = `{% url 'get_random_title_components' %}?client_id=${clientId}`;
 
         fetch(url)
@@ -88,16 +96,54 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
 
+    // 복사 기능을 수행하는 함수
+    function copyTitleComponents() {
+        const subhead = displaySubhead.textContent;
+        const character = displayCharacter.textContent;
+        const talkstyle = displayTalkstyle.textContent;
+        const aspect = displayAspect.textContent;
+
+        // 원하는 형식으로 텍스트 조합
+        const textToCopy = `글 주제: ${subhead}\n글자수: ${character}\n글어투: ${talkstyle}\n글의 대상: ${aspect}\n\n의 스타일로 블로그 포스팅용 글을 적어줘`;
+
+        // 임시 textarea를 사용하여 클립보드에 복사
+        const tempTextArea = document.createElement('textarea');
+        tempTextArea.value = textToCopy;
+        document.body.appendChild(tempTextArea);
+        tempTextArea.select();
+        
+        try {
+            const successful = document.execCommand('copy');
+            if (successful) {
+                copyFeedback.style.display = 'inline'; // "복사됨!" 메시지 표시
+                setTimeout(() => {
+                    copyFeedback.style.display = 'none'; // 2초 후 숨김
+                }, 2000);
+            } else {
+                console.warn('Fallback: Copying text command was unsuccessful.');
+                alert('텍스트 복사에 실패했습니다. 수동으로 복사해주세요: \n' + textToCopy);
+            }
+        } catch (err) {
+            console.error('Fallback: Oops, unable to copy', err);
+            alert('텍스트 복사에 실패했습니다. 수동으로 복사해주세요: \n' + textToCopy);
+        } finally {
+            document.body.removeChild(tempTextArea);
+        }
+    }
+
+
     // 클라이언트 선택 드롭다운 변경 시 이벤트 리스너
     clientSelect.addEventListener('change', updateRandomComponents);
 
-    // 페이지 로드 시에도 초기 랜덤 구성 요소 표시
-    // Django 뷰에서 이미 전달했으므로, JS는 초기 로드 시에는 필요 없고,
-    // 클라이언트 선택이 변경될 때만 실행되도록 해도 됩니다.
-    // 하지만 Admin에서 값을 비워두었을 경우를 대비하여 JS를 통해 한번 더 로드할 수 있습니다.
-    // 현재는 Django 뷰에서 initial 값을 제공하고 있으므로, 클라이언트 선택이 변경될 때만 호출하면 됩니다.
-    // 만약 페이지 로드 시에도 강제로 새로고침하고 싶다면 아래 주석을 해제하세요.
-    // updateRandomComponents();
+    // 복사 버튼 클릭 시 이벤트 리스너
+    copyButton.addEventListener('click', copyTitleComponents);
+
+    // 페이지 로드 시 초기 랜덤 구성 요소 표시 (이미 뷰에서 전달되지만, 혹시 모를 경우를 대비)
+    // Client가 미리 선택되어 있다면 해당 값으로 updateRandomComponents를 호출
+    // 그렇지 않다면, 뷰에서 전달된 초기값을 사용합니다.
+    if (clientSelect.value) { // 초기 선택된 클라이언트가 있다면
+        // updateRandomComponents(); // 페이지 로드 시 Ajax 호출 방지
+    }
 });
 </script>
 {% endblock %}
