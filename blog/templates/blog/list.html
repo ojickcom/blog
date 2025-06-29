@@ -13,36 +13,28 @@
 {% if blogs %}
     <div class="row">
         {% for blog in blogs %}
-        <div class="col-md-6 col-lg-4 mb-4">
+        <div class="col-12 mb-3"> {# Full width for single-line display #}
             <div class="card h-100">
-                {# blog.image_url 대신 blog.client.image_url 참조 #}
-                {% if blog.client and blog.client.image_url %}
-                <img src="{{ blog.client.image_url }}" class="card-img-top blog-image" alt="{{ blog.title }}">
-                {% else %}
-                <div class="card-img-top blog-image bg-light d-flex align-items-center justify-content-center">
-                    <span class="text-muted">🖼️ 이미지 없음</span>
-                </div>
-                {% endif %}
+                {# 이미지 표시 영역 제거 #}
                 
-                <div class="card-body d-flex flex-column">
-                    <h5 class="card-title">{{ blog.title }}</h5>
-                    <p class="card-text">
-                        {{ blog.content|truncatechars:100 }}
-                    </p>
+                <div class="card-body d-flex align-items-center justify-content-between">
+                    {# 제목과 클라이언트 이름을 한 줄에 표시 #}
+                    <h5 class="card-title mb-0">
+                        <a href="{% url 'blog_detail' pk=blog.pk %}">{{ blog.title }}</a>
+                        {% if blog.client %}
+                            <small class="text-muted ms-3">({{ blog.client.name }})</small>
+                        {% endif %}
+                    </h5>
                     
-                    <div class="mt-auto">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <small class="text-muted">
-                                📍 {{ blog.place_name }}
-                            </small>
-                            <small class="text-muted">
-                                {% if blog.client %}
-                                <span class="badge bg-secondary me-2">{{ blog.client.name }} ({{ blog.client.get_client_type_display }})</span>
-                                {% endif %}
-                                📅 {{ blog.written_date|date:"Y-m-d" }}
-                            </small>
-                        </div>
-                        <a href="{% url 'blog_detail' blog.pk %}" class="btn btn-outline-primary btn-sm">
+                    <div class="d-flex align-items-center">
+                        {# 기존의 작성일과 장소명은 유지하거나 제거할 수 있습니다. 여기서는 유지합니다. #}
+                        <small class="text-muted me-3">
+                            📍 {{ blog.place_name }}
+                        </small>
+                        <small class="text-muted">
+                            📅 {{ blog.written_date|date:"Y-m-d" }}
+                        </small>
+                        <a href="{% url 'blog_detail' blog.pk %}" class="btn btn-outline-primary btn-sm ms-3">
                             자세히 보기
                         </a>
                     </div>
