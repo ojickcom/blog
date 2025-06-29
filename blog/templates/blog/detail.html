@@ -22,7 +22,7 @@
             {# 블로그 제목 표시 및 복사 버튼 #}
             <div class="d-flex align-items-center mb-2">
                 <strong class="me-2">제목:</strong>
-                <span id="display-title-text" class="flex-grow-1 text-break">{{ blog.title }}</span>
+                <span id="display-title-text" class="flex-grow-1 text-break">{{ b_title }}</span>
                 <button type="button" class="btn btn-sm btn-outline-secondary ms-2 copy-btn" data-target-id="display-title-text">
                     📋 복사 <span class="ms-1 copy-feedback" style="display: none;">(복사됨!)</span>
                 </button>
@@ -31,8 +31,6 @@
             {# 클라이언트 이미지 URL 표시 및 복사 버튼 #}
             {% if blog.client and blog.client.image_url %}
             <div class="d-flex align-items-center mb-2">
-                <strong class="me-2">이미지 URL:</strong>
-                <span id="display-image-url-text" class="flex-grow-1 text-break">{{ blog.client.image_url }}</span>
                 <button type="button" class="btn btn-sm btn-outline-secondary ms-2 copy-btn" data-target-id="display-image-url-text">
                     📋 복사 <span class="ms-1 copy-feedback" style="display: none;">(복사됨!)</span>
                 </button>
