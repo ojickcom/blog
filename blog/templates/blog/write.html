@@ -3,121 +3,56 @@
 {% block title %}블로그 작성{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-10">
-        <h1 class="mb-4">✏️ 새 블로그 작성</h1>
-        
-        <form method="post" id="blogForm">
-            {% csrf_token %}
-            
-            <!-- 제목 미리보기 -->
-            <div class="title-preview" id="titlePreview">
-                <strong>📌 제목 미리보기:</strong>
-                <div id="previewText" class="mt-2 text-primary">
-                    제목 구성 요소를 입력하면 미리보기가 표시됩니다
-                </div>
-            </div>
-            
-            <div class="row">
-                <!-- 기본 정보 -->
-                <div class="col-md-6">
-                    <h5 class="mb-3">📋 기본 정보</h5>
-                    
-                    <div class="mb-3">
-                        {{ form.content.label_tag }}
-                        {{ form.content }}
-                        {% if form.content.errors %}
-                            <div class="text-danger">{{ form.content.errors }}</div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="mb-3">
-                        {{ form.client_type.label_tag }}
-                        {{ form.client_type }}
-                    </div>
-                    
-                    <div class="mb-3">
-                        {{ form.image_url.label_tag }}
-                        {{ form.image_url }}
-                    </div>
-                    
-                    <div class="mb-3">
-                        {{ form.place_name.label_tag }}
-                        {{ form.place_name }}
-                    </div>
-                </div>
-                
-                <!-- 제목 구성 요소 -->
-                <div class="col-md-6">
-                    <h5 class="mb-3">🏷️ 제목 구성 요소</h5>
-                    
-                    <div class="mb-3">
-                        {{ form.content_title.label_tag }}
-                        {{ form.content_title }}
-                    </div>
-                    
-                    <div class="mb-3">
-                        {{ form.content_number_character.label_tag }}
-                        {{ form.content_number_character }}
-                    </div>
-                    
-                    <div class="mb-3">
-                        {{ form.content_talkstyle.label_tag }}
-                        {{ form.content_talkstyle }}
-                    </div>
-                    
-                    <div class="mb-3">
-                        {{ form.content_aspect.label_tag }}
-                        {{ form.content_aspect }}
-                    </div>
-                </div>
-            </div>
-            
-            <div class="d-flex justify-content-between mt-4">
-                <a href="{% url 'blog_list' %}" class="btn btn-secondary">
-                    ⬅️ 목록으로
-                </a>
-                <button type="submit" class="btn btn-primary">
-                    💾 작성 완료
-                </button>
-            </div>
-        </form>
-    </div>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>✏️ 블로그 작성</h1>
 </div>
 
-<script>
-// 제목 미리보기 기능
-function updateTitlePreview() {
-    const contentTitle = document.querySelector('input[name="content_title"]').value || '';
-    const contentNumberCharacter = document.querySelector('input[name="content_number_character"]').value || '';
-    const contentTalkstyle = document.querySelector('input[name="content_talkstyle"]').value || '';
-    const contentAspect = document.querySelector('input[name="content_aspect"]').value || '';
-    
-    const titleParts = [contentTitle, contentNumberCharacter, contentTalkstyle, contentAspect]
-        .filter(part => part.trim() !== '');
-    
-    const previewText = titleParts.length > 0 
-        ? titleParts.join(' ') 
-        : '제목 구성 요소를 입력하면 미리보기가 표시됩니다';
-    
-    document.getElementById('previewText').textContent = previewText;
-}
+<form method="post">
+    {% csrf_token %}
 
-// 입력 필드에 이벤트 리스너 추가
-document.addEventListener('DOMContentLoaded', function() {
-    const titleInputs = [
-        'input[name="content_title"]',
-        'input[name="content_number_character"]',
-        'input[name="content_talkstyle"]',
-        'input[name="content_aspect"]'
-    ];
-    
-    titleInputs.forEach(selector => {
-        const input = document.querySelector(selector);
-        if (input) {
-            input.addEventListener('input', updateTitlePreview);
-        }
-    });
-});
-</script>
+    <div class="mb-3">
+        <label for="{{ form.content.id_for_label }}" class="form-label">{{ form.content.label }}</label>
+        {{ form.content }}
+        {% if form.content.errors %}
+            <div class="text-danger small mt-1">
+                {% for error in form.content.errors %}{{ error }}{% endfor %}
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="mb-3">
+        <label for="{{ form.client_type.id_for_label }}" class="form-label">{{ form.client_type.label }}</label>
+        {{ form.client_type }}
+        {% if form.client_type.errors %}
+            <div class="text-danger small mt-1">
+                {% for error in form.client_type.errors %}{{ error }}{% endfor %}
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="mb-3">
+        <label for="{{ form.image_url.id_for_label }}" class="form-label">{{ form.image_url.label }}</label>
+        {{ form.image_url }}
+        {% if form.image_url.errors %}
+            <div class="text-danger small mt-1">
+                {% for error in form.image_url.errors %}{{ error }}{% endfor %}
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="mb-3">
+        <label for="{{ form.place_name.id_for_label }}" class="form-label">{{ form.place_name.label }}</label>
+        {{ form.place_name }}
+        {% if form.place_name.errors %}
+            <div class="text-danger small mt-1">
+                {% for error in form.place_name.errors %}{{ error }}{% endfor %}
+            </div>
+        {% endif %}
+    </div>
+
+    {# 기존의 content_title, content_number_character, content_talkstyle, content_aspect 입력 필드들은 여기서 제거됩니다. #}
+    {# 이 필드들은 이제 Admin 페이지에서 미리 입력해두는 용도로만 사용됩니다. #}
+
+    <button type="submit" class="btn btn-success mt-3">저장하기</button>
+</form>
 {% endblock %}
