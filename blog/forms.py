@@ -5,33 +5,35 @@ from .models import Blog, Client
 class BlogForm(forms.ModelForm):
     class Meta:
         model = Blog
-        # 'place_name' 필드를 fields 목록에서 제거
-        fields = ['client', 'content'] # image_url, client_type은 Client 모델로, place_name은 여기서 제거
+        # 'b_title' 필드를 fields 목록에 추가
+        fields = ['client', 'b_title', 'title', 'content'] 
         widgets = {
-            'client': forms.Select(attrs={ # 클라이언트를 드롭다운으로 선택
+            'client': forms.Select(attrs={
                 'class': 'form-select',
+            }),
+            'b_title': forms.TextInput(attrs={ # b_title 입력 필드 추가
+                'class': 'form-control',
+                'placeholder': 'B_제목을 입력하세요 (선택 사항)'
+            }),
+            'title': forms.TextInput(attrs={ 
+                'class': 'form-control',
+                'placeholder': '블로그 제목을 입력하세요 (비워두면 자동 생성)'
             }),
             'content': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 10,
                 'placeholder': '1000자 이상의 내용을 입력하세요'
             }),
-            # 'place_name' 위젯 설정 제거
-            # 'place_name': forms.TextInput(attrs={
-            #     'class': 'form-control',
-            #     'placeholder': '장소명'
-            # }),
         }
         labels = {
             'client': '클라이언트',
+            'b_title': 'B_제목', # B_제목 라벨 추가
+            'title': '제목', 
             'content': '내용',
-            # 'place_name' 라벨 설정 제거
-            # 'place_name': '장소명',
         }
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Client 드롭다운에 표시될 텍스트 설정 (없을 경우를 대비)
         self.fields['client'].queryset = Client.objects.all().order_by('name')
         self.fields['client'].empty_label = "--- 클라이언트를 선택하세요 ---"
         

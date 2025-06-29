@@ -3,96 +3,106 @@ from django.db import models
 from django.utils import timezone
 import random
 
-# Client 모델 (이전과 동일)
+# 기존 Client 모델 (변경 없음)
 class Client(models.Model):
-    name = models.CharField(max_length=100, unique=True, verbose_name="고객 이름")
-    CLIENT_TYPE_CHOICES = [
-        ('place', '장소'),
-        ('shopping', '쇼핑'),
-        ('web_document', '웹 문서'),
+    CLIENT_TYPES = [
+        ('personal', '개인'),
+        ('corporate', '기업'),
+        ('government', '정부/공공기관'),
+        ('startup', '스타트업'),
     ]
-    client_type = models.CharField(
-        max_length=20,
-        choices=CLIENT_TYPE_CHOICES,
-        default='place',
-        verbose_name="클라이언트 타입"
-    )
-    image_url = models.CharField(max_length=200, blank=True, verbose_name="클라이언트 이미지 URL")
+    name = models.CharField(max_length=100, unique=True, verbose_name="클라이언트 이름")
+    client_type = models.CharField(max_length=20, choices=CLIENT_TYPES, default='personal', verbose_name="클라이언트 유형")
+    image_url = models.URLField(max_length=500, blank=True, null=True, verbose_name="이미지 URL") # 클라이언트 이미지 URL 추가
 
     def __str__(self):
         return self.name
-
-# ContentSubhead 모델 (이전과 동일)
-class ContentSubhead(models.Model):
-    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='subheads', verbose_name="관련 고객")
-    name = models.CharField(max_length=100, verbose_name="컨텐츠 서브헤드")
-
-    def __str__(self):
-        return f"{self.client.name} - {self.name}"
-
+    
     class Meta:
-        unique_together = ('client', 'name')
+        verbose_name = "클라이언트"
+        verbose_name_plural = "클라이언트"
 
-# 제목 구성 요소 모델들 (이전과 동일)
-class NumberCharacter(models.Model):
-    name = models.CharField(max_length=50, unique=True, verbose_name="글자 수 특성")
+# 제목 구성 요소 모델들 (변경 없음)
+class ContentSubhead(models.Model):
+    name = models.CharField(max_length=200, verbose_name="글 주제")
+    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='subheads', null=True, blank=True, verbose_name="관련 클라이언트")
 
     def __str__(self):
         return self.name
+    
+    class Meta:
+        verbose_name = "글 주제"
+        verbose_name_plural = "글 주제"
+
+class NumberCharacter(models.Model):
+    name = models.CharField(max_length=100, verbose_name="글자수")
+
+    def __str__(self):
+        return self.name
+    
+    class Meta:
+        verbose_name = "글자수"
+        verbose_name_plural = "글자수"
 
 class TalkStyle(models.Model):
-    name = models.CharField(max_length=50, unique=True, verbose_name="말투 스타일")
+    name = models.CharField(max_length=100, verbose_name="글 어투")
 
     def __str__(self):
         return self.name
+    
+    class Meta:
+        verbose_name = "글 어투"
+        verbose_name_plural = "글 어투"
 
 class ContentAspect(models.Model):
-    name = models.CharField(max_length=50, unique=True, verbose_name="컨텐츠 관점")
+    name = models.CharField(max_length=200, verbose_name="글의 대상")
 
     def __str__(self):
         return self.name
+    
+    class Meta:
+        verbose_name = "글의 대상"
+        verbose_name_plural = "글의 대상"
 
-# Blog 모델 수정: place_name 필드에 blank=True, null=True 추가
+
+# Blog 모델 수정: b_title 필드 추가
 class Blog(models.Model):
-    title = models.CharField(max_length=200, blank=True, verbose_name="제목")
+    client = models.ForeignKey(Client, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="클라이언트")
+    
+    # b_title 필드 추가
+    b_title = models.CharField(max_length=500, blank=True, verbose_name="B_제목") 
+    
+    title = models.CharField(max_length=500, blank=True, verbose_name="제목")
     content = models.TextField(verbose_name="내용")
-    
-    # write.html에서 더 이상 입력받지 않으므로 blank=True, null=True를 추가하여 필수로 만들지 않습니다.
-    place_name = models.CharField(max_length=50, blank=True, null=True, verbose_name="장소명") 
+    place_name = models.CharField(max_length=200, default='온라인', verbose_name="장소명") # 기본값 설정
+    written_date = models.DateTimeField(default=timezone.now, verbose_name="작성일")
 
-    client = models.ForeignKey(Client, on_delete=models.SET_NULL, null=True, blank=True, related_name='blogs', verbose_name="클라이언트")
-    
-    written_date = models.DateField(default=timezone.now, verbose_name="작성일")
-    
-    def save(self, *args, **kwargs):
-        # Blog.save() 로직은 클라이언트가 선택된 경우에만 해당 클라이언트의 subhead를 사용합니다.
-        # views.py에서 화면에 표시하는 로직과는 독립적으로 작동합니다.
-        if not self.title:
-            subhead_part = ""
-            if self.client:
-                subhead_qs = ContentSubhead.objects.filter(client=self.client)
-                random_subhead = subhead_qs.order_by('?').first()
-                if random_subhead:
-                    subhead_part = random_subhead.name
-
-            random_character = NumberCharacter.objects.order_by('?').first()
-            random_talkstyle = TalkStyle.objects.order_by('?').first()
-            random_aspect = ContentAspect.objects.order_by('?').first()
-
-            char_part = random_character.name if random_character else ""
-            talk_part = random_talkstyle.name if random_talkstyle else ""
-            aspect_part = random_aspect.name if random_aspect else ""
-
-            self.title = f"{subhead_part} {char_part} {talk_part} {aspect_part}".strip()
-            
-            if not self.title:
-                self.title = "랜덤 조합 블로그 제목"
-
-        super().save(*args, **kwargs)
-    
     def __str__(self):
-        return self.title
-    
+        return self.title if self.title else f"제목 없음 ({self.pk})"
+
+    def save(self, *args, **kwargs):
+        # title이 비어있으면 랜덤으로 생성
+        if not self.title:
+            subhead_qs = ContentSubhead.objects.all()
+            char_qs = NumberCharacter.objects.all()
+            talk_qs = TalkStyle.objects.all()
+            aspect_qs = ContentAspect.objects.all()
+
+            # 클라이언트가 지정된 경우 해당 클라이언트의 subhead만 사용
+            if self.client:
+                client_subhead_qs = ContentSubhead.objects.filter(client=self.client)
+                if client_subhead_qs.exists():
+                    subhead_qs = client_subhead_qs
+            
+            subhead = random.choice(subhead_qs).name if subhead_qs.exists() else "랜덤 주제"
+            character = random.choice(char_qs).name if char_qs.exists() else "랜덤 글자수"
+            talkstyle = random.choice(talk_qs).name if talk_qs.exists() else "랜덤 어투"
+            aspect = random.choice(aspect_qs).name if aspect_qs.exists() else "랜덤 대상"
+
+            self.title = f"{subhead} {character} {talkstyle} {aspect}"
+            
+        super().save(*args, **kwargs)
+
     class Meta:
         ordering = ['-written_date']
         verbose_name = "블로그 게시물"
