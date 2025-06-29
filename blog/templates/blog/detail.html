@@ -49,10 +49,22 @@
                 </button>
             </div>
             {% endif %}
+
+            {# 블로그 내용 복사 버튼 추가 #}
+            <div class="d-flex align-items-start mb-2"> {# Use align-items-start for multiline content #}
+                <strong class="me-2">내용:</strong>
+                {# 내용을 숨겨진 span에 넣어 복사 대상이 되도록 함 #}
+                <span id="display-content-text" style="display: none;">{{ blog.content }}</span> 
+                {# 실제 보이는 내용은 아래 <p> 태그에서 linebreaksbr 필터와 함께 표시 #}
+                <button type="button" class="btn btn-sm btn-outline-secondary ms-auto copy-btn" data-target-id="display-content-text">
+                    📋 내용 복사하기 <span class="ms-1 copy-feedback" style="display: none;">(복사됨!)</span>
+                </button>
+            </div>
         </div>
         {# END 새로운 정보 표시 및 복사 버튼 섹션 #}
 
         <hr>
+        {# 블로그 내용은 여전히 별도의 <p> 태그에 표시됩니다. #}
         <p class="card-text">
             {{ blog.content|linebreaksbr }}
         </p>
