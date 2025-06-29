@@ -34,7 +34,6 @@
 
     {# 동적으로 업데이트될 제목 구성 요소 표시 영역 #}
     <div class="mb-3 p-3 border rounded bg-light" id="title-components-display">
-        <p class="mb-1 text-muted">아래 조합으로 블로그 포스팅 글을 작성해 보세요.</p>
         <p class="mb-1">
             <strong>글 주제: </strong> <span id="display-subhead" class="text-primary fw-bold">{{ generated_subhead }}</span>
         </p>
@@ -54,18 +53,6 @@
             📋 제목 조합 복사하기 <span id="copy-feedback" class="ms-2" style="display: none;">(복사됨!)</span>
         </button>
     </div>
-
-    {# 수동 제목 입력 필드 #}
-    <div class="mb-3">
-        <label for="{{ form.title.id_for_label }}" class="form-label">{{ form.title.label }}</label>
-        {{ form.title }}
-        {% if form.title.errors %}
-            <div class="text-danger small mt-1">
-                {% for error in form.title.errors %}{{ error }}{% endfor %}
-            </div>
-        {% endif %}
-    </div>
-
     <div class="mb-3">
         <label for="{{ form.content.id_for_label }}" class="form-label">{{ form.content.label }}</label>
         {{ form.content }}
