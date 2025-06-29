@@ -65,6 +65,8 @@ class Blog(models.Model):
     written_date = models.DateField(default=timezone.now, verbose_name="작성일")
     
     def save(self, *args, **kwargs):
+        # Blog.save() 로직은 클라이언트가 선택된 경우에만 해당 클라이언트의 subhead를 사용합니다.
+        # views.py에서 화면에 표시하는 로직과는 독립적으로 작동합니다.
         if not self.title:
             subhead_part = ""
             if self.client:

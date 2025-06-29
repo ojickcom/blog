@@ -21,13 +21,22 @@
         {% endif %}
     </div>
 
-    {# 조합된 제목 표시 영역 추가 #}
-    <div class="mb-3">
-        <label class="form-label">✨ 생성될 제목 미리보기</label>
-        <div class="title-preview border rounded p-3 bg-light">
-            <h4 class="mb-0 text-primary">{{ generated_title }}</h4>
-            <small class="text-muted">이 제목은 글 저장 시 자동으로 결정됩니다.</small>
-        </div>
+    {# 동적으로 업데이트될 제목 구성 요소 표시 영역 #}
+    <div class="mb-3 p-3 border rounded bg-light">
+        <p class="mb-1 text-muted">아래 조합으로 블로그 포스팅 글을 작성해 보세요.</p>
+        <p class="mb-1">
+            <strong>글 주제: </strong> <span id="display-subhead" class="text-primary fw-bold">{{ generated_subhead }}</span>
+        </p>
+        <p class="mb-1">
+            <strong>글자수: </strong> <span id="display-character" class="text-primary fw-bold">{{ generated_character }}</span>
+        </p>
+        <p class="mb-1">
+            <strong>글어투: </strong> <span id="display-talkstyle" class="text-primary fw-bold">{{ generated_talkstyle }}</span>
+        </p>
+        <p class="mb-0">
+            <strong>글의 대상: </strong> <span id="display-aspect" class="text-primary fw-bold">{{ generated_aspect }}</span>
+        </p>
+        <small class="text-muted mt-2 d-block">클라이언트 선택 시마다 내용이 랜덤으로 변경됩니다.</small>
     </div>
 
     <div class="mb-3">
@@ -40,14 +49,55 @@
         {% endif %}
     </div>
 
-    {# 'place_name', 'image_url', 'client_type' 입력 필드는 여기서는 제거됩니다. #}
-    {# 'image_url' 및 'client_type'은 Client 모델에서 관리됩니다. #}
-    {# 'place_name'은 Blog 모델에 남아있지만, write.html 에서는 직접 입력받지 않습니다. #}
-    {# 필요하다면 Blog 모델의 place_name 필드에 default 값을 주거나, blank=True, null=True를 설정하여 필수로 입력하지 않도록 할 수 있습니다. #}
-    {# Admin 페이지를 통해서만 place_name을 입력하거나, DB에 저장될 때 빈 문자열로 두어도 됩니다. #}
-    {# 현재 BlogForm에서는 place_name이 제거되었으므로, 해당 필드에 값을 저장하려면 다른 방식이 필요합니다. #}
-    {# 만약 place_name이 write 페이지에서 입력이 필요없다면, Blog 모델에서도 blank=True를 주어 필수 필드에서 제외하는 것이 좋습니다. #}
-    
     <button type="submit" class="btn btn-success mt-3">저장하기</button>
 </form>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const clientSelect = document.getElementById('{{ form.client.id_for_label }}');
+    const displaySubhead = document.getElementById('display-subhead');
+    const displayCharacter = document.getElementById('display-character');
+    const displayTalkstyle = document.getElementById('display-talkstyle');
+    const displayAspect = document.getElementById('display-aspect');
+
+    // 랜덤 구성 요소를 가져와 업데이트하는 함수
+    function updateRandomComponents() {
+        const clientId = clientSelect.value;
+        const url = `{% url 'get_random_title_components' %}?client_id=${clientId}`;
+
+        fetch(url)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                displaySubhead.textContent = data.generated_subhead || '';
+                displayCharacter.textContent = data.generated_character || '';
+                displayTalkstyle.textContent = data.generated_talkstyle || '';
+                displayAspect.textContent = data.generated_aspect || '';
+            })
+            .catch(error => {
+                console.error('Error fetching random title components:', error);
+                // 오류 발생 시 사용자에게 알리거나 기본값 설정
+                displaySubhead.textContent = '불러오기 오류';
+                displayCharacter.textContent = '불러오기 오류';
+                displayTalkstyle.textContent = '불러오기 오류';
+                displayAspect.textContent = '불러오기 오류';
+            });
+    }
+
+    // 클라이언트 선택 드롭다운 변경 시 이벤트 리스너
+    clientSelect.addEventListener('change', updateRandomComponents);
+
+    // 페이지 로드 시에도 초기 랜덤 구성 요소 표시
+    // Django 뷰에서 이미 전달했으므로, JS는 초기 로드 시에는 필요 없고,
+    // 클라이언트 선택이 변경될 때만 실행되도록 해도 됩니다.
+    // 하지만 Admin에서 값을 비워두었을 경우를 대비하여 JS를 통해 한번 더 로드할 수 있습니다.
+    // 현재는 Django 뷰에서 initial 값을 제공하고 있으므로, 클라이언트 선택이 변경될 때만 호출하면 됩니다.
+    // 만약 페이지 로드 시에도 강제로 새로고침하고 싶다면 아래 주석을 해제하세요.
+    // updateRandomComponents();
+});
+</script>
 {% endblock %}
