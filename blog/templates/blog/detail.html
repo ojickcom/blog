@@ -11,24 +11,50 @@
             <small>📍 {{ blog.place_name }}</small>
         </div>
         
-        {% if blog.client %}
-            <div class="mb-3">
-                <small class="text-muted">
-                    클라이언트: 
-                    <span class="badge bg-info">{{ blog.client.name }}</span>
-                    <span class="badge bg-secondary">{{ blog.client.get_client_type_display }}</span>
-                </small>
+        {# 기존 이미지 표시 영역 제거됨 #}
+
+        <hr>
+
+        {# 새로운 정보 표시 및 복사 버튼 섹션 #}
+        <div class="mb-4 p-3 border rounded bg-light">
+            <h5 class="mb-3">📄 블로그 정보</h5>
+
+            {# 블로그 제목 표시 및 복사 버튼 #}
+            <div class="d-flex align-items-center mb-2">
+                <strong class="me-2">제목:</strong>
+                <span id="display-title-text" class="flex-grow-1 text-break">{{ blog.title }}</span>
+                <button type="button" class="btn btn-sm btn-outline-secondary ms-2 copy-btn" data-target-id="display-title-text">
+                    📋 복사 <span class="ms-1 copy-feedback" style="display: none;">(복사됨!)</span>
+                </button>
             </div>
-            {% if blog.client.image_url %}
-            <div class="text-center mb-4">
-                <img src="{{ blog.client.image_url }}" class="img-fluid rounded" alt="클라이언트 이미지" style="max-height: 300px; object-fit: cover;">
+
+            {# 클라이언트 이미지 URL 표시 및 복사 버튼 #}
+            {% if blog.client and blog.client.image_url %}
+            <div class="d-flex align-items-center mb-2">
+                <strong class="me-2">이미지 URL:</strong>
+                <span id="display-image-url-text" class="flex-grow-1 text-break">{{ blog.client.image_url }}</span>
+                <button type="button" class="btn btn-sm btn-outline-secondary ms-2 copy-btn" data-target-id="display-image-url-text">
+                    📋 복사 <span class="ms-1 copy-feedback" style="display: none;">(복사됨!)</span>
+                </button>
             </div>
             {% endif %}
-        {% endif %}
+
+            {# 클라이언트 이름 표시 및 복사 버튼 #}
+            {% if blog.client %}
+            <div class="d-flex align-items-center mb-2">
+                <strong class="me-2">클라이언트 이름:</strong>
+                <span id="display-client-name-text" class="flex-grow-1 text-break">{{ blog.client.name }}</span>
+                <button type="button" class="btn btn-sm btn-outline-secondary ms-2 copy-btn" data-target-id="display-client-name-text">
+                    📋 복사 <span class="ms-1 copy-feedback" style="display: none;">(복사됨!)</span>
+                </button>
+            </div>
+            {% endif %}
+        </div>
+        {# END 새로운 정보 표시 및 복사 버튼 섹션 #}
 
         <hr>
         <p class="card-text">
-            {{ blog.content|linebreaksbr }} {# 내용의 줄바꿈을 HTML <br> 태그로 변환 #}
+            {{ blog.content|linebreaksbr }}
         </p>
     </div>
 </div>
@@ -36,4 +62,50 @@
 <div class="d-flex justify-content-end">
     <a href="{% url 'blog_list' %}" class="btn btn-secondary">목록으로 돌아가기</a>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const copyButtons = document.querySelectorAll('.copy-btn');
+
+    // 복사 기능을 수행하는 함수
+    function copyTextToClipboard(text, feedbackElement) {
+        const tempTextArea = document.createElement('textarea');
+        tempTextArea.value = text;
+        document.body.appendChild(tempTextArea);
+        tempTextArea.select();
+        
+        try {
+            const successful = document.execCommand('copy');
+            if (successful) {
+                if (feedbackElement) {
+                    feedbackElement.style.display = 'inline'; // "복사됨!" 메시지 표시
+                    setTimeout(() => {
+                        feedbackElement.style.display = 'none'; // 2초 후 숨김
+                    }, 2000);
+                }
+            } else {
+                console.warn('Fallback: Copying text command was unsuccessful.');
+                // alert('텍스트 복사에 실패했습니다. 수동으로 복사해주세요: \n' + text); // Canvas 환경에서 alert 사용 금지
+            }
+        } catch (err) {
+            console.error('Fallback: Oops, unable to copy', err);
+            // alert('텍스트 복사에 실패했습니다. 수동으로 복사해주세요: \n' + text); // Canvas 환경에서 alert 사용 금지
+        } finally {
+            document.body.removeChild(tempTextArea);
+        }
+    }
+
+    copyButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const targetId = this.dataset.targetId;
+            const targetElement = document.getElementById(targetId);
+            const feedbackElement = this.querySelector('.copy-feedback'); // 버튼 내의 피드백 span
+
+            if (targetElement) {
+                copyTextToClipboard(targetElement.textContent.trim(), feedbackElement);
+            }
+        });
+    });
+});
+</script>
 {% endblock %}
