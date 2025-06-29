@@ -24,9 +24,7 @@
                         <small>📅 {{ blog.written_date|date:"Y-m-d" }}</small><br>
                         <small>📍 {{ blog.place_name }}</small>
                     </p>
-                    <p class="card-text">{{ blog.content|truncatechars:100 }}</p>
                     <div class="d-flex justify-content-between align-items-center">
-                        <a href="{% url 'blog_detail' blog.pk %}" class="btn btn-sm btn-outline-primary">자세히 보기</a>
                         <form action="{% url 'blog_delete' blog.pk %}" method="post" class="d-inline">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('정말로 이 블로그 글을 삭제하시겠습니까?');">삭제</button>
