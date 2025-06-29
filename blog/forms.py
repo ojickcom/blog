@@ -74,7 +74,7 @@ class BlogForm(forms.ModelForm):
     
     def clean_content(self):
         content = self.cleaned_data.get('content', '')
-        if len(content) < 1000:
+        if len(content) < 100:
             raise forms.ValidationError(f'내용은 1000자 이상이어야 합니다. (현재: {len(content)}자)')
         return content
     
