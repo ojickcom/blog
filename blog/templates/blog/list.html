@@ -15,8 +15,9 @@
         {% for blog in blogs %}
         <div class="col-md-6 col-lg-4 mb-4">
             <div class="card h-100">
-                {% if blog.image_url %}
-                <img src="{{ blog.image_url }}" class="card-img-top blog-image" alt="{{ blog.title }}">
+                {# blog.image_url 대신 blog.client.image_url 참조 #}
+                {% if blog.client and blog.client.image_url %}
+                <img src="{{ blog.client.image_url }}" class="card-img-top blog-image" alt="{{ blog.title }}">
                 {% else %}
                 <div class="card-img-top blog-image bg-light d-flex align-items-center justify-content-center">
                     <span class="text-muted">🖼️ 이미지 없음</span>
@@ -35,6 +36,9 @@
                                 📍 {{ blog.place_name }}
                             </small>
                             <small class="text-muted">
+                                {% if blog.client %}
+                                <span class="badge bg-secondary me-2">{{ blog.client.name }} ({{ blog.client.get_client_type_display }})</span>
+                                {% endif %}
                                 📅 {{ blog.written_date|date:"Y-m-d" }}
                             </small>
                         </div>

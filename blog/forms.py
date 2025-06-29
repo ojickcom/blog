@@ -1,63 +1,41 @@
 # blog/forms.py
-
 from django import forms
-from .models import Blog
+from .models import Blog, Client # Client 모델 임포트
 
 class BlogForm(forms.ModelForm):
     class Meta:
         model = Blog
-        # 이전에 Blog 모델에서 제거한 필드들을 여기서도 제거합니다.
-        fields = ['content', 'client_type', 'image_url', 'place_name'] # 여기를 수정!
+        # content_title 등 제목 구성 요소 필드는 제거하고 client 필드 추가
+        fields = ['client', 'content', 'place_name'] # image_url, client_type은 Client 모델로 이동
         widgets = {
+            'client': forms.Select(attrs={ # 클라이언트를 드롭다운으로 선택
+                'class': 'form-select',
+            }),
             'content': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 10,
                 'placeholder': '1000자 이상의 내용을 입력하세요'
             }),
-            'client_type': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': '클라이언트 타입'
-            }),
-            'image_url': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': '이미지 URL'
-            }),
             'place_name': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': '장소명'
             }),
-            # 아래 주석 처리된(혹은 삭제된) 위젯들도 모두 제거해야 합니다.
-            # 'content_title': forms.TextInput(attrs={
-            #     'class': 'form-control',
-            #     'placeholder': '컨텐츠 제목'
-            # }),
-            # 'content_number_character': forms.TextInput(attrs={
-            #     'class': 'form-control',
-            #     'placeholder': '글자 수 특성'
-            # }),
-            # 'content_talkstyle': forms.TextInput(attrs={
-            #     'class': 'form-control',
-            #     'placeholder': '말투 스타일'
-            # }),
-            # 'content_aspect': forms.TextInput(attrs={
-            #     'class': 'form-control',
-            #     'placeholder': '컨텐츠 관점'
-            # }),
         }
         labels = {
+            'client': '클라이언트',
             'content': '내용',
-            'client_type': '클라이언트 타입',
-            'image_url': '이미지 URL',
             'place_name': '장소명',
-            # 아래 주석 처리된(혹은 삭제된) 라벨들도 모두 제거해야 합니다.
-            # 'content_title': '컨텐츠 제목',
-            # 'content_number_character': '글자 수 특성',
-            # 'content_talkstyle': '말투 스타일',
-            # 'content_aspect': '컨텐츠 관점',
         }
-
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Client 드롭다운에 표시될 텍스트 설정 (없을 경우를 대비)
+        self.fields['client'].queryset = Client.objects.all().order_by('name')
+        self.fields['client'].empty_label = "--- 클라이언트를 선택하세요 ---"
+        
     def clean_content(self):
         content = self.cleaned_data['content']
         if len(content) < 1000:
             raise forms.ValidationError('내용은 1000자 이상이어야 합니다.')
         return content
+
