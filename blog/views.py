@@ -1,9 +1,10 @@
 # blog/views.py
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import JsonResponse # JsonResponse는 다시 필요합니다.
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST # POST 요청만 허용하도록 데코레이터 임포트
 from .models import Blog, Client, ContentSubhead, NumberCharacter, TalkStyle, ContentAspect
 from .forms import BlogForm
-import random # random 모듈 필요
+import random
 
 def blog_list(request):
     """블로그 목록 페이지"""
@@ -22,8 +23,8 @@ def blog_write(request):
             # 이때도 generated_title을 다시 계산하여 보여줄 수 있습니다.
             return render(request, 'blog/write.html', {
                 'form': form,
-                # POST 실패 시에도 랜덤 제목 구성 요소를 다시 로드하여 템플릿에 전달
-                **_get_random_title_components_data(None) # client_id 없이 호출
+                # client_id 없이 호출하여 초기값 제공 (Client가 필수 필드가 아닐 경우 대비)
+                **_get_random_title_components_data(request.POST.get('client')) 
             })
     else: # GET 요청
         form = BlogForm()
@@ -76,3 +77,9 @@ def get_random_title_components(request):
         return JsonResponse(data)
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
+@require_POST # 이 뷰는 POST 요청만 받도록 설정
+def blog_delete(request, pk):
+    """블로그 게시물 삭제 뷰"""
+    blog = get_object_or_404(Blog, pk=pk) # 해당 PK의 블로그 게시물을 가져오거나 404 에러 발생
+    blog.delete() # 게시물 삭제
+    return redirect('blog_list') # 삭제 후 블로그 목록 페이지로 리다이렉트
