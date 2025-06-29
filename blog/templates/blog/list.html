@@ -31,6 +31,11 @@
     .card-body-compact {
         padding: 0.75rem;
     }
+    .completed-badge {
+        font-size: 0.6rem;
+        padding: 0.15rem 0.3rem;
+        margin-left: 0.25rem;
+    }
     @media (max-width: 768px) {
         .col-compact {
             flex: 0 0 50%;
@@ -40,51 +45,58 @@
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="compact-header">📚 블로그 목록</h1>
+    <h1 class="compact-header">📚 완료된 블로그 목록</h1>
     <a href="{% url 'blog_write' %}" class="btn btn-primary compact-btn">
         ✏️ 새 글 작성
     </a>
 </div>
 
-{% if blogs %}
-    <div class="row">
-        {% for blog in blogs %}
-        <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6 col-compact mb-2" id="blog-card-{{ blog.pk }}"> {# 6열 레이아웃으로 변경 #}
-            <div class="card h-100 compact-card">
-                <div class="card-body card-body-compact d-flex flex-column">
-                    <h6 class="card-title compact-title mb-2">
-                        {# blog.b_title의 뒤에서 5개 단어만 표시 #}
-                        <a href="{% url 'blog_detail' pk=blog.pk %}" class="text-decoration-none" data-full-title="{{ blog.b_title }}">
-                            <span class="display-title"></span>
-                        </a>
-                        {% if blog.client %}
-                            <small class="text-muted d-block compact-client">({{ blog.client.name }})</small>
-                        {% endif %}
-                    </h6>
-                    
-                    <div class="mt-auto d-flex flex-column">
-                        <a href="{% url 'blog_detail' blog.pk %}" class="btn btn-outline-primary compact-btn">
-                            자세히 보기
-                        </a>
-                        <button type="button" class="btn btn-success compact-btn copy-title-btn" data-full-title="{{ blog.b_title }}">
-                            📋 복사
-                        </button>
-                        <button type="button" class="btn btn-danger compact-btn delete-blog-btn" data-blog-id="{{ blog.pk }}">
-                            삭제
-                        </button>
+{% comment %} blog_write가 true인 블로그만 필터링 {% endcomment %}
+{% regroup blogs|dictsort:"blog_write" by blog_write as grouped_blogs %}
+{% for group in grouped_blogs %}
+    {% if group.grouper %}
+        {% if group.list %}
+            <div class="row">
+                {% for blog in group.list %}
+                <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6 col-compact mb-2" id="blog-card-{{ blog.pk }}"> {# 6열 레이아웃으로 변경 #}
+                    <div class="card h-100 compact-card">
+                        <div class="card-body card-body-compact d-flex flex-column">
+                            <h6 class="card-title compact-title mb-2">
+                                {# blog.b_title의 뒤에서 5개 단어만 표시 #}
+                                <a href="{% url 'blog_detail' pk=blog.pk %}" class="text-decoration-none" data-full-title="{{ blog.b_title }}">
+                                    <span class="display-title"></span>
+                                </a>
+                                <span class="badge bg-success completed-badge">✅ 완료</span>
+                                {% if blog.client %}
+                                    <small class="text-muted d-block compact-client">({{ blog.client.name }})</small>
+                                {% endif %}
+                            </h6>
+                            
+                            <div class="mt-auto d-flex flex-column">
+                                <a href="{% url 'blog_detail' blog.pk %}" class="btn btn-outline-primary compact-btn">
+                                    자세히 보기
+                                </a>
+                                <button type="button" class="btn btn-success compact-btn copy-title-btn" data-full-title="{{ blog.b_title }}">
+                                    📋 복사
+                                </button>
+                                <button type="button" class="btn btn-danger compact-btn delete-blog-btn" data-blog-id="{{ blog.pk }}">
+                                    삭제
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
+                {% endfor %}
             </div>
-        </div>
-        {% endfor %}
-    </div>
-{% else %}
+        {% endif %}
+    {% endif %}
+{% empty %}
     <div class="text-center py-4" id="no-blogs-message">
-        <h4 class="text-muted">📝 작성된 블로그가 없습니다</h4>
-        <p class="text-muted small">첫 번째 블로그를 작성해보세요!</p>
+        <h4 class="text-muted">📝 완료된 블로그가 없습니다</h4>
+        <p class="text-muted small">블로그를 작성하고 완료 처리해보세요!</p>
         <a href="{% url 'blog_write' %}" class="btn btn-primary compact-btn">✏️ 글 작성하기</a>
     </div>
-{% endif %}
+{% endfor %}
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -114,7 +126,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const cookies = document.cookie.split(';');
             for (let i = 0; i < cookies.length; i++) {
                 const cookie = cookies[i].trim();
-                if (cookie.startsWith(name + '=')) {
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
                     cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
                     break;
                 }
@@ -182,7 +194,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // 사용자에게 삭제 확인 메시지 표시
             if (confirm('이 블로그 게시물을 정말 삭제하시겠습니까?')) {
-                fetch(`/blog/delete/${blogId}/`, {
+                fetch(`/blog/${blogId}/delete/`, {
                     method: 'POST',
                     headers: {
                         'X-CSRFToken': csrftoken,
@@ -190,27 +202,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     },
                 })
                 .then(response => {
-                    if (response.ok) {
-                        return response.json();
-                    }
-                    throw new Error('삭제 실패');
-                })
-                .then(data => {
-                    if (data.success) {
-                        // 성공적으로 삭제되면 해당 블로그 카드를 DOM에서 제거
-                        if (blogCard) {
-                            blogCard.remove();
-                        }
-
-                        // 모든 블로그가 삭제되면 "작성된 블로그가 없습니다" 메시지 표시
-                        const remainingBlogs = document.querySelectorAll('[id^="blog-card-"]').length;
-                        if (remainingBlogs === 0) {
-                            if (noBlogsMessage) {
-                                noBlogsMessage.style.display = 'block';
-                            }
-                        }
+                    if (response.redirected) {
+                        // 삭제 성공 시 페이지 새로고침
+                        window.location.reload();
                     } else {
-                        alert('블로그 삭제에 실패했습니다: ' + (data.message || '알 수 없는 오류'));
+                        throw new Error('삭제 실패');
                     }
                 })
                 .catch(error => {
@@ -221,7 +217,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // 초기 로드 시 블로그가 없으면 메시지 표시
+    // 초기 로드 시 완료된 블로그가 없으면 메시지 표시
     const initialBlogCount = document.querySelectorAll('[id^="blog-card-"]').length;
     if (initialBlogCount === 0) {
         if (noBlogsMessage) {

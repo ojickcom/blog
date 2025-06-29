@@ -8,8 +8,8 @@ import random
 from datetime import datetime  # 날짜 처리를 위해 추가
 
 def blog_list(request):
-    """블로그 목록 페이지"""
-    blogs = Blog.objects.all().select_related('client')
+    """블로그 목록 페이지 - blog_write가 True인 것만 표시"""
+    blogs = Blog.objects.filter(blog_write=True).select_related('client')
     return render(request, 'blog/list.html', {'blogs': blogs})
 
 def blog_write(request):
