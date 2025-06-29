@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ list_title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">{{ list_title }}</h2>
+
+    <div class="d-flex justify-content-between mb-3">
+        <div>
+            <a href="{% url 'blog_write' %}" class="btn btn-primary me-2">새 블로그 작성</a>
+            <a href="{% url 'blog_list_pending' %}" class="btn btn-info">작성 대기 중인 글 보기</a>
+        </div>
+    </div>
+
+    {% if blogs %}
+    <div class="row row-cols-1 row-cols-md-2 g-4">
+        {% for blog in blogs %}
+        <div class="col">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">{{ blog.b_title }}</h5>
+                    <p class="card-text text-muted mb-2">
+                        <small>📅 {{ blog.written_date|date:"Y-m-d" }}</small><br>
+                        <small>📍 {{ blog.place_name }}</small>
+                    </p>
+                    <p class="card-text">{{ blog.content|truncatechars:100 }}</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <a href="{% url 'blog_detail' blog.pk %}" class="btn btn-sm btn-outline-primary">자세히 보기</a>
+                        <form action="{% url 'blog_delete' blog.pk %}" method="post" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('정말로 이 블로그 글을 삭제하시겠습니까?');">삭제</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="alert alert-info">작성 완료된 블로그 글이 없습니다.</p>
+    {% endif %}
+</div>
+{% endblock %}
