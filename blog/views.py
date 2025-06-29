@@ -2,35 +2,46 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST # POST 요청만 허용하도록 데코레이터 임포트
+from django.views.decorators.csrf import csrf_exempt # CSRF 보호를 임시로 비활성화 (개발용, 실제 배포 시에는 CSRF 토큰 사용 권장)
 from .models import Blog, Client, ContentSubhead, NumberCharacter, TalkStyle, ContentAspect
 from .forms import BlogForm
 import random
-from datetime import datetime  # 날짜 처리를 위해 추가
+from datetime import datetime    # 날짜 처리를 위해 추가
 
-def blog_list(request):
-    """블로그 목록 페이지 - blog_write가 True인 것만 표시"""
-    blogs = Blog.objects.filter(blog_write=True).select_related('client')
-    return render(request, 'blog/list.html', {'blogs': blogs})
+# blog_list를 completed와 pending을 함께 보여주는 대시보드 형태로 변경하거나,
+# 두 개의 개별 뷰로 분리할 수 있습니다. 여기서는 두 개의 개별 뷰를 제공합니다.
+
+def blog_list_completed(request):
+    """블로그 목록 페이지 - blog_write가 True인 작성 완료된 글만 표시"""
+    blogs_completed = Blog.objects.filter(blog_write=True).select_related('client').order_by('-written_date')
+    return render(request, 'blog/list_completed.html', {'blogs': blogs_completed, 'list_title': '작성 완료된 블로그 글'})
+
+def blog_list_pending(request):
+    """블로그 목록 페이지 - blog_write가 False인 작성 대기 중인 글만 표시"""
+    blogs_pending = Blog.objects.filter(blog_write=False).select_related('client').order_by('-written_date')
+    return render(request, 'blog/list_pending.html', {'blogs': blogs_pending, 'list_title': '작성 대기 중인 블로그 글'})
+
 
 def blog_write(request):
     """블로그 작성 페이지"""
     if request.method == 'POST':
         form = BlogForm(request.POST)
         if form.is_valid():
-            blog = form.save(commit=False)  # 아직 DB에 저장하지 않음
+            blog = form.save(commit=False)    # 아직 DB에 저장하지 않음
             
             # 현재 날짜에서 월과 날 추출
             now = datetime.now()
-            month = now.month  # 월 (숫자)
-            day = now.day      # 일 (숫자)
-            month_day = f"{month}월 {day}일"  # "6월 30일" 형식
+            month = now.month    # 월 (숫자)
+            day = now.day        # 일 (숫자)
+            month_day = f"{month}월 {day}일"    # "6월 30일" 형식
             
             # b_title 필드값에 월/날 정보 덧붙이기
             if blog.b_title:
                 blog.b_title = f"{blog.b_title} {month_day}"
             
-            blog.save()  # 수정된 제목으로 저장
-            return redirect('blog_list')
+            blog.save()    # 수정된 제목으로 저장
+            # blog_write는 기본값이 False이므로, 새로 생성된 글은 대기 목록으로 리다이렉트
+            return redirect('blog_list_pending') 
         else:
             # POST 요청이 유효하지 않을 경우, 폼과 함께 에러 메시지를 다시 렌더링
             # 이때도 generated_title을 다시 계산하여 보여줄 수 있습니다.
@@ -95,12 +106,16 @@ def blog_delete(request, pk):
     """블로그 게시물 삭제 뷰"""
     blog = get_object_or_404(Blog, pk=pk) # 해당 PK의 블로그 게시물을 가져오거나 404 에러 발생
     blog.delete() # 게시물 삭제
-    return redirect('blog_list') # 삭제 후 블로그 목록 페이지로 리다이렉트
+    return redirect('blog_list_pending') # 삭제 후 대기 중인 블로그 목록 페이지로 리다이렉트
 
+@csrf_exempt # 개발 단계에서만 사용, 실제 배포 시에는 CSRF 토큰을 포함해야 합니다.
 @require_POST
 def blog_complete(request, pk):
     """블로그 글작성 완료 처리 뷰"""
-    blog = get_object_or_404(Blog, pk=pk)
-    blog.blog_write = True
-    blog.save()
-    return JsonResponse({'status': 'success', 'message': '글작성이 완료되었습니다.'})
+    try:
+        blog = get_object_or_404(Blog, pk=pk)
+        blog.blog_write = True
+        blog.save()
+        return JsonResponse({'status': 'success', 'message': '글작성이 완료되었습니다.'})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
