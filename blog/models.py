@@ -13,7 +13,7 @@ class Client(models.Model):
     ]
     name = models.CharField(max_length=100, unique=True, verbose_name="클라이언트 이름")
     client_type = models.CharField(max_length=20, choices=CLIENT_TYPES, default='personal', verbose_name="클라이언트 유형")
-    image_url = models.URLField(max_length=500, blank=True, null=True, verbose_name="이미지 URL") # 클라이언트 이미지 URL 추가
+    image_url = models.CharField(max_length=500, blank=True, null=True)# 클라이언트 이미지 URL 추가
 
     def __str__(self):
         return self.name
