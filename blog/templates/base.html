@@ -30,24 +30,35 @@
             margin-bottom: 15px;
             border-left: 4px solid #007bff;
         }
+        .compact-btn {
+            font-size: 0.9rem;
+            padding: 0.375rem 0.75rem;
+        }
+        .navbar-nav .nav-link {
+            margin: 0 0.2rem;
+        }
     </style>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container">
             <a class="navbar-brand" href="{% url 'blog_list_pending' %}">📝 블로그</a>
-            <div class="navbar-nav ms-auto">
-                <a class="nav-link" href="{% url 'blog_list_pending' %}">목록</a>
-                <a class="nav-link" href="{% url 'blog_write' %}">작성</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <div class="navbar-nav ms-auto">
+                    <a class="nav-link" href="{% url 'blog_write' %}">새 블로그 작성</a>
+                    <a class="nav-link" href="{% url 'blog_list_pending' %}">작성 대기 중인 글</a>
+                    <a class="nav-link" href="{% url 'blog_list_completed' %}">작성 완료된 글</a>
+                </div>
             </div>
         </div>
     </nav>
-
     <div class="container mt-4">
         {% block content %}
         {% endblock %}
     </div>
-
     <footer class="bg-light text-center py-3 mt-5">
         <p class="mb-0">&copy; 2025 블로그. All rights reserved.</p>
     </footer>
