@@ -29,6 +29,14 @@
         padding: 0.15rem 0.4rem; /* Reduced button padding */
         line-height: 1; /* Ensure button text aligns well */
     }
+    .copy-btn {
+        font-size: 0.75rem; /* Larger font for copy button */
+        padding: 0.25rem 0.6rem; /* Increased padding for copy button */
+        min-width: 60px; /* Minimum width for copy button */
+    }
+    .title-container {
+        min-height: 48px; /* Height for two lines of text */
+    }
     .compact-header {
         font-size: 1.5rem; /* Header can remain slightly larger for prominence */
         margin-bottom: 1rem;
@@ -51,12 +59,12 @@
             <div class="card h-100 shadow-sm compact-card">
                 <div class="card-body d-flex flex-column">
                     {# Title and Copy Button on one line #}
-                    <div class="d-flex align-items-start mb-1">
+                    <div class="d-flex align-items-start mb-1 title-container">
                         <h5 class="card-title compact-title flex-grow-1 mb-0 me-2">
                             <span id="blog-title-{{ blog.pk }}">{{ blog.b_title }}</span>
                         </h5>
                         <button type="button"
-                                class="btn btn-sm btn-outline-secondary compact-btn copy-btn text-nowrap"
+                                class="btn btn-sm btn-outline-secondary copy-btn text-nowrap"
                                 data-blog-id="{{ blog.pk }}"
                                 data-bs-toggle="tooltip"
                                 data-bs-placement="top"
