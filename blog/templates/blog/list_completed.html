@@ -66,18 +66,15 @@
                     </div>
                    
                     {# Client, Date and Delete button in one line #}
-                    <p class="card-text text-muted compact-meta mb-1 d-flex align-items-center justify-content-between">
-                        <span>
-                            {% if blog.client %}
-                                <small>클라이언트: {{ blog.client.name }} | </small>
-                            {% endif %}
-                            <small>📅 {{ blog.written_date|date:"Y-m-d" }}</small>
+                    <div class="d-flex align-items-center justify-content-between compact-meta mb-1">
+                        <span class="text-muted">
+                            {% if blog.client %}<small>클라이언트: {{ blog.client.name }} | </small>{% endif %}<small>📅 {{ blog.written_date|date:"Y-m-d" }}</small>
                         </span>
                         <form action="{% url 'blog_delete' blog.pk %}" method="post" class="d-inline">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-sm btn-outline-danger compact-btn" onclick="return confirm('정말로 이 블로그 글을 삭제하시겠습니까?');">삭제</button>
                         </form>
-                    </p>
+                    </div>
                 </div>
             </div>
         </div>
