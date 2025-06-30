@@ -3,6 +3,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST # POST 요청만 허용하도록 데코레이터 임포트
 from django.views.decorators.csrf import csrf_exempt # CSRF 보호를 임시로 비활성화 (개발용, 실제 배포 시에는 CSRF 토큰 사용 권장)
+from django.contrib.auth.decorators import login_required # 로그인 인증 데코레이터 임포트
 from .models import Blog, Client, ContentSubhead, NumberCharacter, TalkStyle, ContentAspect
 from .forms import BlogForm
 import random
@@ -11,17 +12,19 @@ from datetime import datetime    # 날짜 처리를 위해 추가
 # blog_list를 completed와 pending을 함께 보여주는 대시보드 형태로 변경하거나,
 # 두 개의 개별 뷰로 분리할 수 있습니다. 여기서는 두 개의 개별 뷰를 제공합니다.
 
+@login_required
 def blog_list_completed(request):
     """블로그 목록 페이지 - blog_write가 True인 작성 완료된 글만 표시"""
     blogs_completed = Blog.objects.filter(blog_write=True).select_related('client').order_by('-written_date')
     return render(request, 'blog/list_completed.html', {'blogs': blogs_completed, 'list_title': '트래픽 용도 글'})
 
+@login_required
 def blog_list_pending(request):
     """블로그 목록 페이지 - blog_write가 False인 작성 대기 중인 글만 표시"""
     blogs_pending = Blog.objects.filter(blog_write=False).select_related('client').order_by('-written_date')
     return render(request, 'blog/list_pending.html', {'blogs': blogs_pending, 'list_title': '포스팅용도 글 '})
 
-
+@login_required
 def blog_write(request):
     """블로그 작성 페이지"""
     if request.method == 'POST':
@@ -60,6 +63,7 @@ def blog_write(request):
             **_get_random_title_components_data(None)
         })
 
+@login_required
 def blog_detail(request, pk):
     """블로그 상세 페이지"""
     blog = get_object_or_404(Blog.objects.select_related('client'), pk=pk)
@@ -94,6 +98,7 @@ def _get_random_title_components_data(client_id):
     }
 
 # AJAX 요청을 처리하는 뷰 함수
+@login_required
 def get_random_title_components(request):
     if request.method == 'GET':
         client_id = request.GET.get('client_id')
@@ -101,6 +106,7 @@ def get_random_title_components(request):
         return JsonResponse(data)
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
+@login_required
 @require_POST # 이 뷰는 POST 요청만 받도록 설정
 def blog_delete(request, pk):
     """블로그 게시물 삭제 뷰"""
@@ -108,6 +114,7 @@ def blog_delete(request, pk):
     blog.delete() # 게시물 삭제
     return redirect('blog_list_pending') # 삭제 후 대기 중인 블로그 목록 페이지로 리다이렉트
 
+@login_required
 @csrf_exempt # 개발 단계에서만 사용, 실제 배포 시에는 CSRF 토큰을 포함해야 합니다.
 @require_POST
 def blog_complete(request, pk):
