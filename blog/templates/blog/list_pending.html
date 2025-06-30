@@ -6,11 +6,33 @@
 <div class="container mt-4">
     <h2 class="mb-4">{{ list_title }}</h2>
 
-    <div class="d-flex justify-content-between mb-3">
+    <div class="d-flex justify-content-between mb-3 align-items-center">
         <div>
             <a href="{% url 'blog_write' %}" class="btn btn-primary me-2">새 블로그 작성</a>
             <a href="{% url 'blog_list_completed' %}" class="btn btn-info">작성 완료된 글 보기</a>
         </div>
+        {# 클라이언트별 필터링 메뉴바 시작 #}
+        <div class="dropdown">
+            <button class="btn btn-secondary dropdown-toggle" type="button" id="clientFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                {% if selected_client %}
+                    {{ selected_client }}님 블로그 보기
+                {% else %}
+                    전체 클라이언트 보기
+                {% endif %}
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="clientFilterDropdown">
+                <li><h6 class="dropdown-header">클라이언트별 필터링</h6></li>
+                <li><a class="dropdown-item {% if not selected_client %}active{% endif %}" href="{% url 'blog_list_pending' %}">
+                    전체 보기
+                </a></li>
+                {% for client in clients %}
+                <li><a class="dropdown-item {% if selected_client == client.name %}active{% endif %}" href="{% url 'blog_list_pending_by_client' client_name=client.name %}">
+                    {{ client.name }}
+                </a></li>
+                {% endfor %}
+            </ul>
+        </div>
+        {# 클라이언트별 필터링 메뉴바 끝 #}
     </div>
 
     {% if blogs %}
@@ -23,6 +45,7 @@
                     <p class="card-text text-muted mb-2">
                         <small>📅 {{ blog.written_date|date:"Y-m-d" }}</small><br>
                         <small>📍 {{ blog.place_name }}</small>
+                        {% if blog.client %}<br><small>👤 {{ blog.client.name }}</small>{% endif %} {# 클라이언트 이름 추가 표시 #}
                     </p>
                     <p class="card-text">{{ blog.content|truncatechars:100 }}</p>
                     <div class="d-flex justify-content-between align-items-center">
