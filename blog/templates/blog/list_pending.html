@@ -1,12 +1,12 @@
 {% extends 'base.html' %}
 
-{% block title %}{{ list_title }}{% endblock %}
+{% block title %>{{ list_title }}{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
     <h2 class="mb-4">{{ list_title }}</h2>
 
-    <div style="position: fixed; bottom: 20px; right: 20px; z-index: 1000;">
+    <div style="position: sticky; top: 20px; z-index: 999; text-align: right; margin-bottom: 20px;">
         <a href="{% url 'blog_write' %}" class="btn btn-primary me-2 shadow-sm">새 블로그 작성</a>
         <a href="{% url 'blog_list_completed' %}" class="btn btn-info shadow-sm">작성 완료된 글 보기</a>
     </div>
