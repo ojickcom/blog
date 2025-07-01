@@ -19,7 +19,10 @@
         <div class="col">
             <div class="card h-100 shadow-sm">
                 <div class="card-body">
-                    <h5 class="card-title">{{ blog.b_title }}</h5>
+                    {# 여기에 스타일을 추가합니다. #}
+                    <h5 class="card-title" style="height: 3em; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+                        {{ blog.b_title }}
+                    </h5>
                     <p class="card-text text-muted mb-2">
                         <small>📅 {{ blog.written_date|date:"Y-m-d" }}</small><br>
                         <small>📍 {{ blog.place_name }}</small>
