@@ -110,7 +110,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const talkstyle = displayTalkstyle.textContent;
         const aspect = displayAspect.textContent;
 
-        const textToCopy = `글 주제: ${subhead}\n글자수: ${character}\n글어투: ${talkstyle}\n글의 대상: ${aspect}\n\n의 스타일로 블로그 포스팅용 글을 적어줘`;
+        const textToCopy = `글 주제: ${subhead}\n글자수: ${character}\n글어투: ${talkstyle}\n글의 대상: ${aspect}\n\n의 스타일로 글 내용의 첫줄에는 특수문자를 넣지 말고, 블로그 포스팅용 글을 적어줘. `;
 
         const tempTextArea = document.createElement('textarea');
         tempTextArea.value = textToCopy;
