@@ -6,7 +6,10 @@
  <div class="card mb-4"> 
       <div class="card-body"> 
            {# blog.title 대신 blog.b_title을 표시 #} 
-           <h1 class="card-title">{{ blog.b_title }}</h1> 
+           <h1 class="card-title" 
+               style="height: 3.5em; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+               {{ blog.b_title }}
+           </h1> 
            <div class="d-flex justify-content-between align-items-center text-muted mb-3"> 
                 <small>📅 {{ blog.written_date|date:"Y-m-d" }}</small> 
                 <small>📍 {{ blog.place_name }}</small> 
