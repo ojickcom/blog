@@ -5,58 +5,55 @@
 {% block content %}
 
 <style>
-    /* Custom styles for compact display */
     .compact-card {
-        font-size: 0.8rem; /* Smaller base font size for the card */
-        min-height: 80px; /* Further reduced minimum height */
+        font-size: 0.75rem;
+        min-height: 60px;
     }
     .compact-card .card-body {
-        padding: 0.5rem; /* Further reduced padding inside the card body */
+        padding: 0.3rem 0.4rem; /* 상하 최소 패딩 */
+        gap: 0; /* 내부 간격 제거 */
     }
-    .compact-title {
-        font-size: 0.9rem; /* Slightly larger for title, but still compact */
-        font-weight: 600;
-        line-height: 1.1; /* Tighter line height */
-        margin-bottom: 0.15rem; /* Further reduced margin below title */
-    }
-    .compact-meta {
-        font-size: 0.7rem; /* Even smaller for metadata */
-        margin-bottom: 0.1rem; /* Minimal margin */
-        line-height: 1.1; /* Tighter line height */
-    }
-    .compact-btn {
-        font-size: 0.65rem; /* Smaller font for buttons */
-        padding: 0.1rem 0.3rem; /* Further reduced button padding */
-        line-height: 1; /* Ensure button text aligns well */
-    }
-    .copy-btn {
-        font-size: 0.7rem; /* Slightly smaller font for copy button */
-        padding: 0.15rem 0.4rem; /* Reduced padding for copy button */
-        min-width: 50px; /* Reduced minimum width for copy button */
+    .card-body.d-flex.flex-column {
+        gap: 0 !important; /* 추가 안전 처리 */
     }
     .title-container {
-        min-height: 36px; /* Reduced height for title container */
-        margin-bottom: 0.1rem; /* Minimal margin */
+        min-height: auto;
+        margin-bottom: 0.05rem; /* 거의 없앰 */
     }
-    .compact-header {
-        font-size: 1.5rem; /* Header can remain slightly larger for prominence */
-        margin-bottom: 1rem;
-    }
-    .btn-group-sm > .btn, .btn-sm {
-        /* Override default Bootstrap small button styles if needed */
-        font-size: 0.65rem;
-        padding: 0.1rem 0.3rem;
-    }
-    /* Remove any extra spacing from flex container */
-    .card-body.d-flex.flex-column {
-        gap: 0; /* Remove any gap between flex items */
-    }
-    /* Minimize spacing in meta section */
-    .meta-section {
+    .compact-title {
+        font-size: 0.85rem;
+        line-height: 1;
         margin-bottom: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .compact-meta {
+        font-size: 0.65rem;
+        line-height: 1;
+        margin: 0;
+        padding: 0;
+    }
+    .meta-section {
+        margin-top: auto; /* 하단에 고정 */
+        padding-top: 0.15rem;
         padding-bottom: 0;
     }
+    .compact-btn, .copy-btn {
+        font-size: 0.6rem;
+        padding: 0.05rem 0.25rem;
+        min-height: 20px;
+        line-height: 1;
+    }
+    .copy-btn {
+        min-width: 40px;
+    }
+    .compact-header {
+        font-size: 1.4rem;
+        margin-bottom: 0.8rem;
+    }
 </style>
+
 
 <div class="container mt-4">
     <h2 class="mb-4 compact-header">{{ list_title }}</h2>
