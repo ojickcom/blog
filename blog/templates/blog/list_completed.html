@@ -68,7 +68,7 @@
                     {# Title and Copy Button on one line #}
                     <div class="d-flex align-items-start title-container">
                         <h5 class="card-title compact-title flex-grow-1 mb-0 me-2">
-                            <span id="blog-title-{{ blog.pk }}" data-full-title="{{ blog.b_title }}">{{ blog.b_title }}</span>
+                           <small style="font-size: 0.75rem;">{{ blog.client.name }} | </small>
                         </h5>
                         <button type="button"
                                 class="btn btn-sm btn-outline-secondary copy-btn text-nowrap"
