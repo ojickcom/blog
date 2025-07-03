@@ -112,7 +112,7 @@ def blog_delete(request, pk):
     """블로그 게시물 삭제 뷰"""
     blog = get_object_or_404(Blog, pk=pk) # 해당 PK의 블로그 게시물을 가져오거나 404 에러 발생
     blog.delete() # 게시물 삭제
-    return redirect('blog_list_pending') # 삭제 후 대기 중인 블로그 목록 페이지로 리다이렉트
+    return redirect('blog_complete') # 삭제 후 대기 중인 블로그 목록 페이지로 리다이렉트
 
 @login_required
 @csrf_exempt # 개발 단계에서만 사용, 실제 배포 시에는 CSRF 토큰을 포함해야 합니다.
