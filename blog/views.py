@@ -14,9 +14,30 @@ from datetime import datetime    # 날짜 처리를 위해 추가
 
 @login_required
 def blog_list_completed(request):
-    """블로그 목록 페이지 - blog_write가 True인 작성 완료된 글만 표시"""
-    blogs_completed = Blog.objects.filter(blog_write=True).select_related('client').order_by('-written_date')
-    return render(request, 'blog/list_completed.html', {'blogs': blogs_completed, 'list_title': '트래픽 용도 글'})
+    """작성 완료된 글 + 날짜 필터링"""
+    selected_date = request.GET.get('date')  # URL에서 날짜 파라미터 받기
+    blogs_query = Blog.objects.filter(blog_write=True).select_related('client')
+    
+    if selected_date:
+        blogs_query = blogs_query.filter(written_date__date=parse_date(selected_date))
+    
+    blogs_completed = blogs_query.order_by('-written_date')
+
+    # 날짜 목록 생성
+    available_dates = (
+        Blog.objects.filter(blog_write=True)
+        .annotate(date_only=TruncDate('written_date'))
+        .values_list('date_only', flat=True)
+        .distinct()
+        .order_by('-date_only')
+    )
+
+    return render(request, 'blog/list_completed.html', {
+        'blogs': blogs_completed,
+        'list_title': '트래픽 용도 글',
+        'available_dates': available_dates,
+        'selected_date': selected_date,
+    })
 
 @login_required
 def blog_list_pending(request):
