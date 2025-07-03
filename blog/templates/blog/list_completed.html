@@ -85,7 +85,7 @@
                     {# Client, Date and Delete button in one line #}
                     <div class="d-flex align-items-center justify-content-between compact-meta meta-section">
                         <span class="text-muted">
-                            {% if blog.client %}<small>{{ blog.client.name }} | </small>{% endif %}<small>📅 {{ blog.written_date|date:"Y-m-d" }}</small>
+                            {% if blog.client %}<small>{{ blog.client.name }} | </small>{% endif %}
                         </span>
                         <form action="{% url 'blog_delete' blog.pk %}" method="post" class="d-inline">
                             {% csrf_token %}
