@@ -6,6 +6,8 @@ from django.views.decorators.csrf import csrf_exempt # CSRF 보호를 임시로 
 from django.contrib.auth.decorators import login_required # 로그인 인증 데코레이터 임포트
 from .models import Blog, Client, ContentSubhead, NumberCharacter, TalkStyle, ContentAspect
 from .forms import BlogForm
+from django.db.models.functions import TruncDate
+from django.utils.dateparse import parse_date
 import random
 from datetime import datetime    # 날짜 처리를 위해 추가
 
