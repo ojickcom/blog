@@ -68,7 +68,7 @@
                     {# Title and Copy Button on one line #}
                     <div class="d-flex align-items-start title-container">
                         <h5 class="card-title compact-title flex-grow-1 mb-0 me-2">
-                           <small style="font-size: 0.75rem;">{{ blog.client.name }} | </small>
+                            <span id="blog-title-{{ blog.pk }}" data-full-title="{{ blog.b_title }}">{{ blog.b_title }}</span>
                         </h5>
                         <button type="button"
                                 class="btn btn-sm btn-outline-secondary copy-btn text-nowrap"
@@ -82,7 +82,7 @@
                     {# Client, Date and Delete button in one line #}
                     <div class="d-flex align-items-center justify-content-between compact-meta meta-section">
                         <span class="text-muted">
-                            {% if blog.client %}<small>{{ blog.client.name }} | </small>{% endif %}
+                            {% if blog.client %} <small style="font-size: 0.75rem;">{{ blog.client.name }} | </small>{% endif %}
                         </span>
                         <form action="{% url 'blog_delete' blog.pk %}" method="post" class="d-inline">
                             {% csrf_token %}
