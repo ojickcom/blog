@@ -153,13 +153,12 @@ def blog_complete(request, pk):
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
     
-
 @login_required
 def shopping_keyword_list(request):
     """
     쇼핑 키워드 목록을 보여주는 페이지.
     지난 10일간의 클릭 횟수도 함께 표시.
-    shopping_keyword_click에 들어가는 키워드와 그렇지 않은 키워드 모두 보여준다.
+    모든 키워드 (그룹 관계없이) 보여준다.
     """
     today = date.today()
     ten_days_ago = today - timedelta(days=9) # 오늘 포함 10일 전
@@ -167,15 +166,9 @@ def shopping_keyword_list(request):
     # 모든 쇼핑 키워드를 가져옵니다.
     all_keywords = ShoppingKeyword.objects.select_related('client').order_by('client__name', 'keyword')
 
-    # 각 키워드에 대해 지난 10일간의 클릭 횟수를 조회합니다.
-    # 딕셔너리로 {keyword.id: {date: count, ...}} 형태로 저장
     recent_clicks_data = {}
-    
-    # 10일간의 날짜 리스트 생성
     date_range = [ten_days_ago + timedelta(days=i) for i in range(10)]
 
-    # 한 번의 쿼리로 10일간의 모든 클릭 데이터를 가져옵니다.
-    # 특정 기간 내의 모든 키워드 클릭을 필터링
     all_recent_clicks = KeywordClick.objects.filter(
         click_date__gte=ten_days_ago,
         click_date__lte=today,
@@ -191,18 +184,24 @@ def shopping_keyword_list(request):
             recent_clicks_data[keyword_id] = {}
         recent_clicks_data[keyword_id][click_date] = click_count
     
-    # 템플릿에서 쉽게 접근할 수 있도록 각 키워드 객체에 클릭 데이터를 추가
     for keyword in all_keywords:
         keyword.recent_clicks = recent_clicks_data.get(keyword.pk, {})
-        # 각 날짜에 대한 클릭 횟수가 없으면 0으로 표시하기 위한 리스트 생성
         keyword.daily_clicks_display = [
             keyword.recent_clicks.get(d, 0) for d in date_range
         ]
+    
+    # colspan_count 계산은 뷰에서 처리하여 템플릿으로 전달
+    colspan_count = 4 + len(date_range) + 1 # 클라이언트, 메인, 키워드, 관리, 클릭 대상 + 날짜 수 + (새로운 '키워드 그룹' 컬럼 추가)
+                                          # 4(클라이언트, 메인, 키워드, 관리) + date_range 길이 + 1(클릭 대상 컬럼) + 1(새로 추가될 그룹 컬럼)
+                                          # 정확히는 컬럼이 (클라이언트, 메인 키워드, 키워드, 날짜들, 키워드 그룹, 관리) 이므로
+                                          # 3 (client, main_keyword, keyword) + len(date_range) + 1 (keyword_group) + 1 (관리)
+                                          # 총 5 + len(date_range)
+    colspan_count = 5 + len(date_range) # 클라이언트, 메인 키워드, 키워드, 키워드 그룹, 관리 + 날짜 수
 
     return render(request, 'blog/shopping_keyword_list.html', {
         'keywords': all_keywords,
-        'date_range': date_range,\
-             'colspan_count': 4 + len(date_range), # 템플릿에서 헤더를 만들기 위함
+        'date_range': date_range,
+        'colspan_count': colspan_count, # 계산된 colspan_count 전달
     })
 
 @login_required
@@ -210,6 +209,7 @@ def shopping_keyword_input(request, pk=None):
     """
     쇼핑 키워드 입력 (생성/수정) 페이지.
     pk가 있으면 수정, 없으면 생성.
+    main_keyword와 keyword_group을 입력/수정 가능.
     """
     keyword_instance = None
     if pk: # 수정 모드
@@ -240,17 +240,17 @@ def shopping_keyword_delete(request, pk):
 def shopping_keyword_click_page(request):
     """
     클릭용 키워드 목록 페이지.
-    'is_click_target'이 True인 키워드만 보여준다.
+    'keyword_group'이 'keyword_group1'인 키워드만 보여준다.
     """
-    # is_click_target이 True인 키워드만 필터링
-    keywords = ShoppingKeyword.objects.filter(is_click_target=True).select_related('client').order_by('client__name', 'keyword')
+    # 'keyword_group'이 'keyword_group1'인 키워드만 필터링
+    keywords = ShoppingKeyword.objects.filter(keyword_group='keyword_group1').select_related('client').order_by('client__name', 'keyword')
     return render(request, 'blog/shopping_keyword_click.html', {
         'keywords': keywords,
     })
 
 @login_required
 @require_POST
-@csrf_exempt # 개발용: CSRF 보호 임시 비활성화 (실제 배포 시에는 CSRF 토큰 사용 권장)
+@csrf_exempt
 def increment_click_count(request):
     """
     AJAX 요청을 통해 키워드의 클릭 횟수를 1 증가시키는 뷰.
@@ -281,16 +281,12 @@ def increment_click_count(request):
 def shopping_keyword_detail(request, pk):
     """
     특정 키워드의 상세 페이지.
-    모든 날짜별 클릭 횟수를 보여준다.
+    모든 날짜별 클릭 횟수를 보여주고, keyword_group 정보도 포함.
     """
     keyword = get_object_or_404(ShoppingKeyword.objects.select_related('client'), pk=pk)
-    # 해당 키워드의 모든 클릭 기록을 가져옵니다.
-    # KeywordClick 모델에 ordering = ['-click_date'] 가 있으므로 최신순으로 정렬됩니다.
     all_clicks = keyword.clicks.all()
 
     return render(request, 'blog/shopping_keyword_detail.html', {
         'keyword': keyword,
         'all_clicks': all_clicks,
-
-    
     })
