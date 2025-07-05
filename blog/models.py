@@ -120,29 +120,30 @@ class ShoppingKeyword(models.Model):
         verbose_name="클라이언트"
     )
     keyword = models.CharField(max_length=255, verbose_name="키워드")
-    # 새로 추가될 main_keyword 필드
-    # 자기 자신을 참조하며, 종속될 키워드가 없으면 null=True
     main_keyword = models.ForeignKey(
-        'self', # 자기 자신을 참조
-        on_delete=models.SET_NULL, # 메인 키워드가 삭제되어도 종속 키워드는 남도록
-        related_name='sub_keywords', # 역참조 이름
+        'self',
+        on_delete=models.SET_NULL,
+        related_name='sub_keywords',
         null=True,
         blank=True,
         verbose_name="메인 키워드"
     )
-    # is_click_target 필드 추가 (shopping_keyword_click 페이지에 보여질지 여부)
-    is_click_target = models.BooleanField(default=False, verbose_name="클릭 대상 키워드")
+    # 기존 is_click_target 대신 keyword_group 필드 추가
+    keyword_group = models.CharField(
+        max_length=50,
+        default='기본', # 기본 그룹명 설정
+        verbose_name="키워드 그룹"
+    )
 
     class Meta:
         unique_together = ('client', 'keyword')
         verbose_name = "쇼핑 키워드"
-        verbose_name_plural = "쇼핑 키워드"
+        verbose_plural = "쇼핑 키워드" # 오타 수정: verbose_name_plural -> verbose_plural
 
     def __str__(self):
-        # 메인 키워드가 있으면 함께 표시
         if self.main_keyword:
-            return f"[{self.client.name}] {self.main_keyword.keyword} > {self.keyword}"
-        return f"[{self.client.name}] {self.keyword}"
+            return f"[{self.client.name}] {self.main_keyword.keyword} > {self.keyword} ({self.keyword_group})"
+        return f"[{self.client.name}] {self.keyword} ({self.keyword_group})"
 
 class KeywordClick(models.Model):
     keyword = models.ForeignKey(
@@ -157,8 +158,8 @@ class KeywordClick(models.Model):
     class Meta:
         unique_together = ('keyword', 'click_date')
         verbose_name = "키워드 클릭 기록"
-        verbose_name_plural = "키워드 클릭 기록"
-        ordering = ['-click_date'] # 최신 날짜부터 정렬
+        verbose_plural = "키워드 클릭 기록" # 오타 수정
+        ordering = ['-click_date']
 
     def __str__(self):
         return f"{self.keyword.keyword} - {self.click_date}: {self.click_count}회"
