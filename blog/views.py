@@ -6,12 +6,12 @@ from django.views.decorators.csrf import csrf_exempt # CSRF 보호를 임시로 
 from django.contrib.auth.decorators import login_required # 로그인 인증 데코레이터 임포트
 from django.db.models import F # 필드 값 업데이트를 위해 F 객체 임포트
 from datetime import date, timedelta
+from django.db.models import OuterRef, Subquery 
 from .models import Blog, Client, ContentSubhead, NumberCharacter, TalkStyle, ContentAspect,  ShoppingKeyword, KeywordClick 
 from .forms import BlogForm, ShoppingKeywordForm
 from django.db.models.functions import TruncDate
 from django.utils.dateparse import parse_date
 import random
-
 from datetime import datetime    # 날짜 처리를 위해 추가
 
 # blog_list를 completed와 pending을 함께 보여주는 대시보드 형태로 변경하거나,
