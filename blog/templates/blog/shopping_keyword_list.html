@@ -14,8 +14,12 @@
                 <thead>
                     <tr>
                         <th>클라이언트</th>
+                        <th>메인 키워드</th> {# 메인 키워드 컬럼 추가 #}
                         <th>키워드</th>
-                        <th>오늘 클릭 횟수</th>
+                        {% for d in date_range %}
+                        <th class="text-center">{{ d|date:"m/d" }}</th> {# 날짜별 클릭 횟수 헤더 #}
+                        {% endfor %}
+                        <th>클릭 대상</th> {# is_click_target 표시 #}
                         <th>관리</th>
                     </tr>
                 </thead>
@@ -23,12 +27,26 @@
                     {% for keyword in keywords %}
                     <tr>
                         <td>{{ keyword.client.name }}</td>
-                        <td>{{ keyword.keyword }}</td>
                         <td>
-                            {% if keyword.today_clicks %}
-                                {{ keyword.today_clicks }}
+                            {% if keyword.main_keyword %}
+                                {{ keyword.main_keyword.keyword }}
                             {% else %}
-                                0
+                                -
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'shopping_keyword_detail' pk=keyword.pk %}">
+                                {{ keyword.keyword }}
+                            </a>
+                        </td>
+                        {% for count in keyword.daily_clicks_display %}
+                        <td class="text-center">{{ count }}</td> {# 날짜별 클릭 횟수 데이터 #}
+                        {% endfor %}
+                        <td>
+                            {% if keyword.is_click_target %}
+                                <span class="badge bg-success">Y</span>
+                            {% else %}
+                                <span class="badge bg-secondary">N</span>
                             {% endif %}
                         </td>
                         <td>
@@ -37,12 +55,12 @@
                                 {% csrf_token %}
                                 <button type="submit" class="btn btn-sm btn-danger compact-btn">삭제</button>
                             </form>
-                            <a href="{% url 'shopping_keyword_click' %}" class="btn btn-sm btn-success compact-btn">클릭용</a>
+                            <a href="{% url 'shopping_keyword_click' %}" class="btn btn-sm btn-success compact-btn">클릭용 바로가기</a>
                         </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="4" class="text-center">등록된 쇼핑 키워드가 없습니다.</td>
+                        <td colspan="{{ 4 + date_range|length }}" class="text-center">등록된 쇼핑 키워드가 없습니다.</td>
                     </tr>
                     {% endfor %}
                 </tbody>

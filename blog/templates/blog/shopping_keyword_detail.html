@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block title %}{{ keyword.keyword }} 클릭 상세{% endblock %}
+
+{% block content %}
+<h1 class="h3 mb-4">{{ keyword.keyword }} ({{ keyword.client.name }}) - 클릭 상세</h1>
+
+{% if keyword.main_keyword %}
+<p><strong>메인 키워드:</strong> {{ keyword.main_keyword.keyword }}</p>
+{% endif %}
+<p><strong>클릭 대상 키워드:</strong>
+    {% if keyword.is_click_target %}
+        <span class="badge bg-success">예</span>
+    {% else %}
+        <span class="badge bg-secondary">아니오</span>
+    {% endif %}
+</p>
+
+<h2 class="h4 mt-4">클릭 기록</h2>
+<div class="card shadow-sm">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>날짜</th>
+                        <th>클릭 횟수</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for click in all_clicks %}
+                    <tr>
+                        <td>{{ click.click_date|date:"Y년 m월 d일" }}</td>
+                        <td>{{ click.click_count }}회</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="2" class="text-center">이 키워드에 대한 클릭 기록이 없습니다.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="mt-4">
+    <a href="{% url 'shopping_keyword_list' %}" class="btn btn-secondary">목록으로 돌아가기</a>
+</div>
+{% endblock %}

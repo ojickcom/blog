@@ -151,35 +151,56 @@ def blog_complete(request, pk):
         return JsonResponse({'status': 'success', 'message': '글작성이 완료되었습니다.'})
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+    
+
 @login_required
 def shopping_keyword_list(request):
     """
     쇼핑 키워드 목록을 보여주는 페이지.
-    각 키워드의 날짜별 클릭 횟수도 함께 표시.
+    지난 10일간의 클릭 횟수도 함께 표시.
+    shopping_keyword_click에 들어가는 키워드와 그렇지 않은 키워드 모두 보여준다.
     """
-    # 모든 쇼핑 키워드를 가져오고, 관련 클라이언트와 클릭 데이터를 미리 가져옵니다.
-    # 클릭 데이터는 annotate를 사용하여 각 키워드별 오늘 날짜의 클릭 횟수를 가져옵니다.
     today = date.today()
-    keywords = ShoppingKeyword.objects.select_related('client').annotate(
-        today_clicks=F('clicks__click_count')
-    ).filter(clicks__click_date=today)
+    ten_days_ago = today - timedelta(days=9) # 오늘 포함 10일 전
+
+    # 모든 쇼핑 키워드를 가져옵니다.
+    all_keywords = ShoppingKeyword.objects.select_related('client').order_by('client__name', 'keyword')
+
+    # 각 키워드에 대해 지난 10일간의 클릭 횟수를 조회합니다.
+    # 딕셔너리로 {keyword.id: {date: count, ...}} 형태로 저장
+    recent_clicks_data = {}
     
-    # 만약 오늘 클릭 데이터가 없는 키워드도 모두 보여주고 싶다면
-    # keywords = ShoppingKeyword.objects.select_related('client').annotate(
-    #     today_clicks=Coalesce(
-    #         Subquery(
-    #             KeywordClick.objects.filter(
-    #                 keyword=OuterRef('pk'),
-    #                 click_date=today
-    #             ).values('click_count')[:1]
-    #         ), 0
-    #     )
-    # )
-    # from django.db.models import OuterRef, Subquery
-    # from django.db.models.functions import Coalesce
+    # 10일간의 날짜 리스트 생성
+    date_range = [ten_days_ago + timedelta(days=i) for i in range(10)]
+
+    # 한 번의 쿼리로 10일간의 모든 클릭 데이터를 가져옵니다.
+    # 특정 기간 내의 모든 키워드 클릭을 필터링
+    all_recent_clicks = KeywordClick.objects.filter(
+        click_date__gte=ten_days_ago,
+        click_date__lte=today,
+        keyword__in=all_keywords # 현재 화면에 표시될 키워드들만 대상으로
+    ).values('keyword_id', 'click_date', 'click_count')
+
+    for click_item in all_recent_clicks:
+        keyword_id = click_item['keyword_id']
+        click_date = click_item['click_date']
+        click_count = click_item['click_count']
+
+        if keyword_id not in recent_clicks_data:
+            recent_clicks_data[keyword_id] = {}
+        recent_clicks_data[keyword_id][click_date] = click_count
+    
+    # 템플릿에서 쉽게 접근할 수 있도록 각 키워드 객체에 클릭 데이터를 추가
+    for keyword in all_keywords:
+        keyword.recent_clicks = recent_clicks_data.get(keyword.pk, {})
+        # 각 날짜에 대한 클릭 횟수가 없으면 0으로 표시하기 위한 리스트 생성
+        keyword.daily_clicks_display = [
+            keyword.recent_clicks.get(d, 0) for d in date_range
+        ]
 
     return render(request, 'blog/shopping_keyword_list.html', {
-        'keywords': keywords,
+        'keywords': all_keywords,
+        'date_range': date_range, # 템플릿에서 헤더를 만들기 위함
     })
 
 @login_required
@@ -196,13 +217,13 @@ def shopping_keyword_input(request, pk=None):
         form = ShoppingKeywordForm(request.POST, instance=keyword_instance)
         if form.is_valid():
             form.save()
-            return redirect('shopping_keyword_list') # 저장 후 목록 페이지로 이동
+            return redirect('shopping_keyword_list')
     else: # GET 요청
         form = ShoppingKeywordForm(instance=keyword_instance)
 
     return render(request, 'blog/shopping_keyword_input.html', {
         'form': form,
-        'is_edit': pk is not None, # 수정 모드인지 여부 템플릿에 전달
+        'is_edit': pk is not None,
     })
 
 @login_required
@@ -217,9 +238,10 @@ def shopping_keyword_delete(request, pk):
 def shopping_keyword_click_page(request):
     """
     클릭용 키워드 목록 페이지.
-    여기서는 모든 키워드를 보여주고 '복사하기' 버튼을 제공.
+    'is_click_target'이 True인 키워드만 보여준다.
     """
-    keywords = ShoppingKeyword.objects.all().select_related('client').order_by('client__name', 'keyword')
+    # is_click_target이 True인 키워드만 필터링
+    keywords = ShoppingKeyword.objects.filter(is_click_target=True).select_related('client').order_by('client__name', 'keyword')
     return render(request, 'blog/shopping_keyword_click.html', {
         'keywords': keywords,
     })
@@ -239,19 +261,32 @@ def increment_click_count(request):
         return JsonResponse({'status': 'error', 'message': 'Keyword ID is required.'}, status=400)
 
     try:
-        # 해당 키워드와 오늘 날짜에 대한 클릭 기록을 가져오거나 새로 생성
         click_record, created = KeywordClick.objects.get_or_create(
             keyword_id=keyword_id,
             click_date=today,
-            defaults={'click_count': 0} # 새로 생성될 경우 초기값 0
+            defaults={'click_count': 0}
         )
-        # 클릭 횟수 1 증가
         click_record.click_count = F('click_count') + 1
         click_record.save()
-        # 데이터베이스에서 업데이트된 값을 다시 불러옴
         click_record.refresh_from_db()
         return JsonResponse({'status': 'success', 'new_count': click_record.click_count})
     except ShoppingKeyword.DoesNotExist:
         return JsonResponse({'status': 'error', 'message': 'Keyword not found.'}, status=404)
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+@login_required
+def shopping_keyword_detail(request, pk):
+    """
+    특정 키워드의 상세 페이지.
+    모든 날짜별 클릭 횟수를 보여준다.
+    """
+    keyword = get_object_or_404(ShoppingKeyword.objects.select_related('client'), pk=pk)
+    # 해당 키워드의 모든 클릭 기록을 가져옵니다.
+    # KeywordClick 모델에 ordering = ['-click_date'] 가 있으므로 최신순으로 정렬됩니다.
+    all_clicks = keyword.clicks.all()
+
+    return render(request, 'blog/shopping_keyword_detail.html', {
+        'keyword': keyword,
+        'all_clicks': all_clicks,
+    })
