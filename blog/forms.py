@@ -1,6 +1,6 @@
 # blog/forms.py
 from django import forms
-from .models import Blog, Client
+from .models import Blog, Client,  ShoppingKeyword
 
 class BlogForm(forms.ModelForm):
     class Meta:
@@ -43,3 +43,13 @@ class BlogForm(forms.ModelForm):
             raise forms.ValidationError('내용은 50자 이상이어야 합니다.')
         return content
 
+class ShoppingKeywordForm(forms.ModelForm):
+    class Meta:
+        model = ShoppingKeyword
+        fields = ['client', 'keyword']
+        labels = {
+            'client': '클라이언트',
+            'keyword': '키워드',
+        }
+    # 클라이언트 선택 드롭다운에 모든 클라이언트 표시
+    client = forms.ModelChoiceField(queryset=Client.objects.all(), label="클라이언트")

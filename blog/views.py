@@ -4,8 +4,10 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_POST # POST 요청만 허용하도록 데코레이터 임포트
 from django.views.decorators.csrf import csrf_exempt # CSRF 보호를 임시로 비활성화 (개발용, 실제 배포 시에는 CSRF 토큰 사용 권장)
 from django.contrib.auth.decorators import login_required # 로그인 인증 데코레이터 임포트
-from .models import Blog, Client, ContentSubhead, NumberCharacter, TalkStyle, ContentAspect
-from .forms import BlogForm
+from django.db.models import F # 필드 값 업데이트를 위해 F 객체 임포트
+from datetime import date
+from .models import Blog, Client, ContentSubhead, NumberCharacter, TalkStyle, ContentAspect,  ShoppingKeyword, KeywordClick 
+from .forms import BlogForm, ShoppingKeywordForm
 from django.db.models.functions import TruncDate
 from django.utils.dateparse import parse_date
 import random
@@ -147,5 +149,109 @@ def blog_complete(request, pk):
         blog.blog_write = True
         blog.save()
         return JsonResponse({'status': 'success', 'message': '글작성이 완료되었습니다.'})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+@login_required
+def shopping_keyword_list(request):
+    """
+    쇼핑 키워드 목록을 보여주는 페이지.
+    각 키워드의 날짜별 클릭 횟수도 함께 표시.
+    """
+    # 모든 쇼핑 키워드를 가져오고, 관련 클라이언트와 클릭 데이터를 미리 가져옵니다.
+    # 클릭 데이터는 annotate를 사용하여 각 키워드별 오늘 날짜의 클릭 횟수를 가져옵니다.
+    today = date.today()
+    keywords = ShoppingKeyword.objects.select_related('client').annotate(
+        today_clicks=F('clicks__click_count')
+    ).filter(clicks__click_date=today)
+    
+    # 만약 오늘 클릭 데이터가 없는 키워드도 모두 보여주고 싶다면
+    # keywords = ShoppingKeyword.objects.select_related('client').annotate(
+    #     today_clicks=Coalesce(
+    #         Subquery(
+    #             KeywordClick.objects.filter(
+    #                 keyword=OuterRef('pk'),
+    #                 click_date=today
+    #             ).values('click_count')[:1]
+    #         ), 0
+    #     )
+    # )
+    # from django.db.models import OuterRef, Subquery
+    # from django.db.models.functions import Coalesce
+
+    return render(request, 'blog/shopping_keyword_list.html', {
+        'keywords': keywords,
+    })
+
+@login_required
+def shopping_keyword_input(request, pk=None):
+    """
+    쇼핑 키워드 입력 (생성/수정) 페이지.
+    pk가 있으면 수정, 없으면 생성.
+    """
+    keyword_instance = None
+    if pk: # 수정 모드
+        keyword_instance = get_object_or_404(ShoppingKeyword, pk=pk)
+
+    if request.method == 'POST':
+        form = ShoppingKeywordForm(request.POST, instance=keyword_instance)
+        if form.is_valid():
+            form.save()
+            return redirect('shopping_keyword_list') # 저장 후 목록 페이지로 이동
+    else: # GET 요청
+        form = ShoppingKeywordForm(instance=keyword_instance)
+
+    return render(request, 'blog/shopping_keyword_input.html', {
+        'form': form,
+        'is_edit': pk is not None, # 수정 모드인지 여부 템플릿에 전달
+    })
+
+@login_required
+@require_POST
+def shopping_keyword_delete(request, pk):
+    """쇼핑 키워드 삭제."""
+    keyword = get_object_or_404(ShoppingKeyword, pk=pk)
+    keyword.delete()
+    return redirect('shopping_keyword_list')
+
+@login_required
+def shopping_keyword_click_page(request):
+    """
+    클릭용 키워드 목록 페이지.
+    여기서는 모든 키워드를 보여주고 '복사하기' 버튼을 제공.
+    """
+    keywords = ShoppingKeyword.objects.all().select_related('client').order_by('client__name', 'keyword')
+    return render(request, 'blog/shopping_keyword_click.html', {
+        'keywords': keywords,
+    })
+
+@login_required
+@require_POST
+@csrf_exempt # 개발용: CSRF 보호 임시 비활성화 (실제 배포 시에는 CSRF 토큰 사용 권장)
+def increment_click_count(request):
+    """
+    AJAX 요청을 통해 키워드의 클릭 횟수를 1 증가시키는 뷰.
+    매일 0시에 초기화되는 로직을 포함.
+    """
+    keyword_id = request.POST.get('keyword_id')
+    today = date.today()
+
+    if not keyword_id:
+        return JsonResponse({'status': 'error', 'message': 'Keyword ID is required.'}, status=400)
+
+    try:
+        # 해당 키워드와 오늘 날짜에 대한 클릭 기록을 가져오거나 새로 생성
+        click_record, created = KeywordClick.objects.get_or_create(
+            keyword_id=keyword_id,
+            click_date=today,
+            defaults={'click_count': 0} # 새로 생성될 경우 초기값 0
+        )
+        # 클릭 횟수 1 증가
+        click_record.click_count = F('click_count') + 1
+        click_record.save()
+        # 데이터베이스에서 업데이트된 값을 다시 불러옴
+        click_record.refresh_from_db()
+        return JsonResponse({'status': 'success', 'new_count': click_record.click_count})
+    except ShoppingKeyword.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Keyword not found.'}, status=404)
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)

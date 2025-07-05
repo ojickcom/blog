@@ -1,6 +1,6 @@
 # blog/admin.py
 from django.contrib import admin
-from .models import Blog, Client, ContentSubhead, NumberCharacter, TalkStyle, ContentAspect
+from .models import Blog, Client, ContentSubhead, NumberCharacter, TalkStyle, ContentAspect,  ShoppingKeyword, KeywordClick, Client 
 
 # Client 모델 관리자 등록 (이전과 동일)
 @admin.register(Client)
@@ -50,3 +50,16 @@ class BlogAdmin(admin.ModelAdmin):
         }),
     )
     raw_id_fields = ['client']
+@admin.register(ShoppingKeyword)
+class ShoppingKeywordAdmin(admin.ModelAdmin):
+    list_display = ('client', 'keyword')
+    list_filter = ('client',)
+    search_fields = ('keyword', 'client__name')
+    raw_id_fields = ('client',) # 클라이언트가 많을 때 유용
+
+@admin.register(KeywordClick)
+class KeywordClickAdmin(admin.ModelAdmin):
+    list_display = ('keyword', 'click_date', 'click_count')
+    list_filter = ('click_date', 'keyword__client')
+    search_fields = ('keyword__keyword',)
+    date_hierarchy = 'click_date' # 날짜별 계층 구조 보기

@@ -1,0 +1,53 @@
+{% extends 'base.html' %} {# 또는 기존 레이아웃 파일 #}
+{% block title %}쇼핑 키워드 목록{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3">쇼핑 키워드 목록</h1>
+    <a href="{% url 'shopping_keyword_input' %}" class="btn btn-primary">새 키워드 추가</a>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>클라이언트</th>
+                        <th>키워드</th>
+                        <th>오늘 클릭 횟수</th>
+                        <th>관리</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for keyword in keywords %}
+                    <tr>
+                        <td>{{ keyword.client.name }}</td>
+                        <td>{{ keyword.keyword }}</td>
+                        <td>
+                            {% if keyword.today_clicks %}
+                                {{ keyword.today_clicks }}
+                            {% else %}
+                                0
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'shopping_keyword_edit' pk=keyword.pk %}" class="btn btn-sm btn-info compact-btn">수정</a>
+                            <form action="{% url 'shopping_keyword_delete' pk=keyword.pk %}" method="post" style="display:inline;" onsubmit="return confirm('정말로 삭제하시겠습니까?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-danger compact-btn">삭제</button>
+                            </form>
+                            <a href="{% url 'shopping_keyword_click' %}" class="btn btn-sm btn-success compact-btn">클릭용</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center">등록된 쇼핑 키워드가 없습니다.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

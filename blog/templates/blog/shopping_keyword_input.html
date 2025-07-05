@@ -1,0 +1,21 @@
+{% extends 'base.html' %} {# 또는 기존 레이아웃 파일 #}
+{% block title %}
+    {% if is_edit %}키워드 수정{% else %}새 키워드 추가{% endif %}
+{% endblock %}
+
+{% block content %}
+<h1 class="h3 mb-4">{% if is_edit %}키워드 수정{% else %}새 키워드 추가{% endif %}</h1>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn btn-primary">
+                {% if is_edit %}수정{% else %}추가{% endif %}
+            </button>
+            <a href="{% url 'shopping_keyword_list' %}" class="btn btn-secondary">목록으로</a>
+        </form>
+    </div>
+</div>
+{% endblock %}
