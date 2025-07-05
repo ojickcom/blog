@@ -2,6 +2,7 @@
 from django.db import models
 from django.utils import timezone
 import random
+from datetime import date
 
 # 기존 Client 모델 (변경 없음)
 class Client(models.Model):
@@ -110,3 +111,41 @@ class Blog(models.Model):
         ordering = ['-written_date']
         verbose_name = "블로그 게시물"
         verbose_name_plural = "블로그 게시물"
+
+class ShoppingKeyword(models.Model):
+    # Foreign Key로 Client 모델과 연결
+    client = models.ForeignKey(
+        'Client', # 'Client' 문자열로 참조하여 순환 참조 방지 (Client 모델이 아래에 있어도 됨)
+        on_delete=models.CASCADE, # 클라이언트 삭제 시 키워드도 삭제
+        related_name='shopping_keywords', # Client 객체에서 이 키워드들을 역참조할 때 사용
+        verbose_name="클라이언트"
+    )
+    keyword = models.CharField(max_length=255, verbose_name="키워드")
+    # 키워드의 고유성을 위해 (client-keyword 쌍으로 고유하게)
+    class Meta:
+        unique_together = ('client', 'keyword')
+        verbose_name = "쇼핑 키워드"
+        verbose_name_plural = "쇼핑 키워드"
+
+    def __str__(self):
+        return f"[{self.client.name}] {self.keyword}"
+
+class KeywordClick(models.Model):
+    # ShoppingKeyword와 연결 (어떤 키워드가 클릭되었는지)
+    keyword = models.ForeignKey(
+        ShoppingKeyword,
+        on_delete=models.CASCADE,
+        related_name='clicks',
+        verbose_name="쇼핑 키워드"
+    )
+    click_date = models.DateField(default=timezone.now, verbose_name="클릭 날짜")
+    click_count = models.PositiveIntegerField(default=0, verbose_name="클릭 횟수")
+
+    class Meta:
+        # 특정 키워드가 특정 날짜에 몇 번 클릭되었는지 기록 (중복 방지)
+        unique_together = ('keyword', 'click_date')
+        verbose_name = "키워드 클릭 기록"
+        verbose_name_plural = "키워드 클릭 기록"
+
+    def __str__(self):
+        return f"{self.keyword.keyword} - {self.click_date}: {self.click_count}회"
