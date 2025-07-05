@@ -42,7 +42,6 @@ class BlogForm(forms.ModelForm):
         if len(content) < 50:
             raise forms.ValidationError('내용은 50자 이상이어야 합니다.')
         return content
-
 class ShoppingKeywordForm(forms.ModelForm):
     # main_keyword 필드에 대한 쿼리셋을 동적으로 설정 (자기 자신을 제외한 키워드만 선택 가능)
     # 이 부분은 __init__에서 처리하는 것이 더 좋습니다.
