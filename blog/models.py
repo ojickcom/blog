@@ -111,7 +111,6 @@ class Blog(models.Model):
         ordering = ['-written_date']
         verbose_name = "블로그 게시물"
         verbose_name_plural = "블로그 게시물"
-
 class ShoppingKeyword(models.Model):
     client = models.ForeignKey(
         'Client',
@@ -128,7 +127,6 @@ class ShoppingKeyword(models.Model):
         blank=True,
         verbose_name="메인 키워드"
     )
-    # 기존 is_click_target 대신 keyword_group 필드 추가
     keyword_group = models.CharField(
         max_length=50,
         default='기본', # 기본 그룹명 설정
@@ -138,7 +136,8 @@ class ShoppingKeyword(models.Model):
     class Meta:
         unique_together = ('client', 'keyword')
         verbose_name = "쇼핑 키워드"
-        verbose_plural = "쇼핑 키워드" # 오타 수정: verbose_name_plural -> verbose_plural
+        # Fix: Change verbose_plural to verbose_name_plural
+        verbose_name_plural = "쇼핑 키워드" 
 
     def __str__(self):
         if self.main_keyword:
@@ -158,7 +157,8 @@ class KeywordClick(models.Model):
     class Meta:
         unique_together = ('keyword', 'click_date')
         verbose_name = "키워드 클릭 기록"
-        verbose_plural = "키워드 클릭 기록" # 오타 수정
+        # Fix: Change verbose_plural to verbose_name_plural
+        verbose_name_plural = "키워드 클릭 기록" 
         ordering = ['-click_date']
 
     def __str__(self):
