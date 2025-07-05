@@ -201,7 +201,8 @@ def shopping_keyword_list(request):
 
     return render(request, 'blog/shopping_keyword_list.html', {
         'keywords': all_keywords,
-        'date_range': date_range, # 템플릿에서 헤더를 만들기 위함
+        'date_range': date_range,\
+             'colspan_count': 4 + len(date_range), # 템플릿에서 헤더를 만들기 위함
     })
 
 @login_required
@@ -290,4 +291,6 @@ def shopping_keyword_detail(request, pk):
     return render(request, 'blog/shopping_keyword_detail.html', {
         'keyword': keyword,
         'all_clicks': all_clicks,
+
+    
     })
