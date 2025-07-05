@@ -5,12 +5,13 @@ from django.views.decorators.http import require_POST # POST 요청만 허용하
 from django.views.decorators.csrf import csrf_exempt # CSRF 보호를 임시로 비활성화 (개발용, 실제 배포 시에는 CSRF 토큰 사용 권장)
 from django.contrib.auth.decorators import login_required # 로그인 인증 데코레이터 임포트
 from django.db.models import F # 필드 값 업데이트를 위해 F 객체 임포트
-from datetime import date
+from datetime import date, timedelta
 from .models import Blog, Client, ContentSubhead, NumberCharacter, TalkStyle, ContentAspect,  ShoppingKeyword, KeywordClick 
 from .forms import BlogForm, ShoppingKeywordForm
 from django.db.models.functions import TruncDate
 from django.utils.dateparse import parse_date
 import random
+
 from datetime import datetime    # 날짜 처리를 위해 추가
 
 # blog_list를 completed와 pending을 함께 보여주는 대시보드 형태로 변경하거나,
