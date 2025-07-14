@@ -128,7 +128,6 @@ class MainShoppingKeywordForm(forms.ModelForm):
         
         # keyword_group의 기본값을 '기본'으로 설정합니다.
         # HiddenInput이므로 이 초기값을 설정하는 것이 중요합니다.
-        self.fields['keyword_group'].initial = '기본' # <-- '기본' 값으로 초기화!
 
     def clean_keyword(self):
         main_keyword = self.cleaned_data['main_keyword']
