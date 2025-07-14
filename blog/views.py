@@ -200,11 +200,12 @@ def shopping_keyword_list(request):
     # 3 (client, main_keyword, keyword) + len(date_range) + 1 (클릭 대상) + 1 (관리) = 5 + len(date_range)
     colspan_count = 5 + len(date_range)
 
-
+    main_keyword_form = MainShoppingKeywordForm()
     return render(request, 'blog/shopping_keyword_list.html', {
         'keywords': all_keywords,
         'date_range': date_range,
         'colspan_count': colspan_count, # 계산된 colspan_count 전달
+        'main_keyword_form': main_keyword_form, 
     })
 
 
