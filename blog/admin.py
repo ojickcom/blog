@@ -61,7 +61,19 @@ class ShoppingKeywordAdmin(admin.ModelAdmin):
     list_display = ('client', 'keyword')
     list_filter = ('client',)
     search_fields = ('keyword', 'client__name')
-    raw_id_fields = ('client',) # 클라이언트가 많을 때 유용
+    raw_id_fields = ('client', 'main_keyword')  # 클라이언트가 많을 때 유용
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == "main_keyword":
+            # 수정 중인 객체의 client 기준으로 필터링
+            object_id = request.resolver_match.kwargs.get("object_id")
+            if object_id:
+                try:
+                    current_obj = ShoppingKeyword.objects.get(pk=object_id)
+                    # 같은 클라이언트의 키워드만 보여주고, 자기 자신은 제외
+                    kwargs["queryset"] = ShoppingKeyword.objects.filter(client=current_obj.client).exclude(pk=current_obj.pk)
+                except ShoppingKeyword.DoesNotExist:
+                    pass
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 @admin.register(KeywordClick)
 class KeywordClickAdmin(admin.ModelAdmin):

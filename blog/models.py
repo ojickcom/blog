@@ -139,10 +139,13 @@ class ShoppingKeyword(models.Model):
         verbose_name="클라이언트"
     )
     keyword = models.CharField(max_length=255, verbose_name="키워드")
-    main_keyword = models.CharField(
-        max_length=255, 
-        blank=True, 
-        null=True, 
+    main_keyword = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        limit_choices_to=models.Q(),  # admin.py에서 필터링 설정 예정
+        related_name='sub_keywords',
         verbose_name="메인 키워드"
     )
     keyword_group = models.CharField(
