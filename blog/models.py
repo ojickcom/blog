@@ -16,6 +16,8 @@ class Client(models.Model):
     name = models.CharField(max_length=100, unique=True, verbose_name="클라이언트 이름")
     client_type = models.CharField(max_length=20, choices=CLIENT_TYPES, default='personal', verbose_name="클라이언트 유형")
     image_url = models.CharField(max_length=500, blank=True, null=True)# 클라이언트 이미지 URL 추가
+    payment_amount = models.IntegerField(default=0, verbose_name="결재금액")
+    is_completed = models.BooleanField(default=False, verbose_name="완성여부")
 
     def __str__(self):
         return self.name
