@@ -18,7 +18,7 @@ class ContentSubheadAdmin(admin.ModelAdmin):
     list_filter = ['client']
     search_fields = ['name']
     raw_id_fields = ['client']
-@admin.register(ContentSubhead)
+
 class ExpenseAdmin(admin.ModelAdmin):
     list_display = ('name', 'price', 'is_recurring', 'date')
     list_filter = ('is_recurring',)
