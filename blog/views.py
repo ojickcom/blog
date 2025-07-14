@@ -7,7 +7,7 @@ from django.contrib.auth.decorators import login_required # 로그인 인증 데
 from django.db.models import F # 필드 값 업데이트를 위해 F 객체 임포트
 from datetime import date, timedelta
 from django.db.models import OuterRef, Subquery, Sum
-from .models import Blog, Client, ContentSubhead, NumberCharacter, TalkStyle, ContentAspect,  ShoppingKeyword, KeywordClick 
+from .models import Blog, Client, ContentSubhead, NumberCharacter, TalkStyle, ContentAspect,  ShoppingKeyword, KeywordClick,Expense
 from .forms import BlogForm, ShoppingKeywordForm
 from django.db.models.functions import TruncDate
 from django.utils.dateparse import parse_date
