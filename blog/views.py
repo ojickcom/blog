@@ -6,7 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import F, Case, When, Value, BooleanField # Case, When, Value, BooleanField 임포트
 from datetime import date, timedelta
 from django.db.models import OuterRef, Subquery, Sum
-from .models import Blog, Client, ContentSubhead, NumberCharacter, TalkStyle, ContentAspect, ShoppingKeyword, KeywordClick, Expense
+from .models import Blog, Client, ContentSubhead, NumberCharacter, TalkStyle, ContentAspect, ShoppingKeyword, KeywordClick, Expense, KeywordGroup
 from .forms import BlogForm, SubKeywordAddForm, MainKeywordNameUpdateForm,MainKeywordInitialAddForm
 import random
 from datetime import datetime
@@ -406,3 +406,37 @@ def create_sub_keyword_ajax(request): # 함수명 변경 (하위 키워드 추�
     else:
         # 폼 유효성 검사 실패 시 에러 메시지 반환 (디버깅 용이하게 errors를 그대로 반환)
         return JsonResponse({'status': 'error', 'errors': form.errors}, status=400)
+@login_required
+def shopping_keyword_click_list(request):
+    """
+    클릭용 키워드 리스트를 표시하는 뷰.
+    키워드 그룹별로 필터링 가능.
+    """
+    selected_group_name = request.GET.get('group') # URL 쿼리 파라미터 'group' 가져오기
+
+    # 모든 활성 키워드 그룹 이름 가져오기 (필터링 버튼에 사용)
+    # 키워드 그룹 데이터가 없으면 비어있는 리스트 반환
+    available_groups_queryset = KeywordGroup.objects.all().order_by('name')
+    available_groups = [group.name for group in available_groups_queryset]
+
+    # 모든 쇼핑 키워드를 가져오되, main_keyword와 groups를 미리 가져옴
+    # groups 필드를 통해 필터링할 수 있도록 .prefetch_related('groups') 추가
+    keywords_queryset = ShoppingKeyword.objects.select_related('main_keyword').prefetch_related('groups')
+
+    # '클릭 대상'이 True인 키워드만 보여줄 경우 필터 추가 (선택 사항)
+    # keywords_queryset = keywords_queryset.filter(is_click_target=True) 
+
+    if selected_group_name:
+        # 특정 그룹에 속한 키워드만 필터링
+        keywords_queryset = keywords_queryset.filter(groups__name=selected_group_name)
+
+    # 필요에 따라 정렬 순서 조정 (예: 클라이언트명, 메인 키워드명, 키워드명 순)
+    keywords_queryset = keywords_queryset.order_by('client__name', 'main_keyword__keyword', 'keyword')
+
+    context = {
+        'list_title': '클릭용 키워드 리스트',
+        'keywords': keywords_queryset, # 템플릿에서 'keywords'로 사용
+        'available_groups': available_groups,
+        'selected_group_name': selected_group_name,
+    }
+    return render(request, 'blog/shopping_keyword_click_list.html', context)

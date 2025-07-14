@@ -20,11 +20,11 @@ urlpatterns = [
 
 
      # --- 쇼핑 키워드 관련 URL ---
-     path('shopping/keywords/', views.shopping_keyword_list, name='shopping_keyword_list'),
+    path('shopping/keywords/', views.shopping_keyword_list, name='shopping_keyword_list'),
     path('shopping/keywords/input/', views.shopping_keyword_input, name='shopping_keyword_input'),
-     path('shopping/keywords/edit/<int:pk>/', views.shopping_keyword_edit, name='shopping_keyword_edit'),
-
-path('shopping/keywords/input/', views.shopping_keyword_input, name='shopping_keyword_input'),
+    path('shopping/keywords/edit/<int:pk>/', views.shopping_keyword_edit, name='shopping_keyword_edit'),
+    path('shopping_keywords/click_list/', views.shopping_keyword_click_list, name='shopping_keyword_click_list'),
+    path('shopping/keywords/input/', views.shopping_keyword_input, name='shopping_keyword_input'),
     path('shopping/keywords/<int:pk>/delete/', views.shopping_keyword_delete, name='shopping_keyword_delete'),
     path('shopping/keywords/click/', views.shopping_keyword_click_page, name='shopping_keyword_click'),
     path('shopping/keywords/increment_click/', views.increment_click_count, name='increment_click_count'),

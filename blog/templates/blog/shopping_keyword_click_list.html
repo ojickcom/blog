@@ -1,0 +1,140 @@
+{# blog/templates/blog/shopping_keyword_click_list.html #}
+{% extends 'base.html' %}
+
+{% block title %}클릭용 키워드 리스트{% endblock %}
+
+{% load static %}
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'blog/style.css' %}"> {# 필요한 경우, CSS 파일 경로 확인 #}
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="h3 mb-4">클릭용 키워드 리스트</h1>
+
+    {# 키워드 그룹 필터링 버튼들 #}
+    <div class="d-flex flex-wrap ms-2 gap-1 mb-3">
+        {# "전체" 버튼 #}
+        <a href="{% url 'shopping_keyword_click_list' %}"
+           class="btn btn-outline-secondary btn-sm {% if not selected_group_name %}active{% endif %}">
+            전체
+        </a>
+        {# 각 키워드 그룹별 버튼 #}
+        {% for group_name in available_groups %}
+            <a href="?group={{ group_name }}"
+               class="btn btn-outline-primary btn-sm {% if group_name == selected_group_name %}active{% endif %}">
+                {{ group_name }}
+            </a>
+        {% endfor %}
+    </div>
+
+    {% if keywords %} {# 'keywords' 변수로 이름 변경 #}
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-2">
+        {% for keyword_obj in keywords %} {# 'keyword_obj'로 변수명 변경 (blog와 혼동 방지) #}
+        <div class="col">
+            <div class="card h-100 shadow-sm compact-card">
+                <div class="card-body d-flex flex-column">
+                    {# Keyword and Copy Button on one line #}
+                    <div class="d-flex align-items-start title-container">
+                        <h5 class="card-title compact-title flex-grow-1 mb-0 me-2">
+                            <span id="keyword-text-{{ keyword_obj.pk }}" data-full-keyword="{{ keyword_obj.keyword }}">{{ keyword_obj.keyword }}</span>
+                        </h5>
+                        <button type="button"
+                                class="btn btn-sm btn-outline-secondary copy-btn text-nowrap"
+                                data-keyword-id="{{ keyword_obj.pk }}"
+                                data-bs-toggle="tooltip"
+                                data-bs-placement="top"
+                                title="클립보드에 키워드 복사">
+                            📋 복사
+                        </button>
+                    </div>              
+                    {# Main Keyword (if exists) #}
+                    <div class="compact-meta mt-1">
+                        {% if keyword_obj.main_keyword %}
+                            <small class="text-muted" style="font-size: 0.75rem;">상위: {{ keyword_obj.main_keyword.keyword }}</small>
+                        {% else %}
+                            <small class="text-muted" style="font-size: 0.75rem;">(메인 키워드)</small>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="alert alert-info">등록된 키워드가 없습니다.</p>
+    {% endif %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Function to get last 5 words from a string (이 템플릿에서는 전체 키워드 표시하므로 사용하지 않음)
+    // 하지만 원래 템플릿에서 그대로 가져온 것이므로 유지하거나 제거해도 무방합니다.
+    function getLastFiveWords(text) {
+        const words = text.trim().split(/\s+/);
+        return words.slice(-5).join(' ');
+    }
+
+    // Process all keyword texts (여기서는 전체 키워드 표시, 잘라내지 않음)
+    // 원래 템플릿의 blog.b_title 대신 keyword.keyword를 사용하도록 변경
+    const keywordElements = document.querySelectorAll('[id^="keyword-text-"]');
+    keywordElements.forEach(element => {
+        // data-full-keyword 속성을 사용하여 원본 키워드를 유지합니다.
+        // 여기서는 키워드를 자르지 않으므로 `element.textContent`는 이미 전체 키워드입니다.
+        // 필요한 경우, `const fullKeyword = element.dataset.fullKeyword;` 를 사용해 복사 등에 활용 가능
+    });
+
+    // Initialize tooltips (requires Bootstrap JS and Popper.js)
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+      return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    const copyButtons = document.querySelectorAll('.copy-btn');
+
+    copyButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const keywordId = this.dataset.keywordId; // data-blog-id -> data-keyword-id
+            const keywordElement = document.getElementById(`keyword-text-${keywordId}`); // blog-title -> keyword-text
+            const keywordToCopy = keywordElement ? keywordElement.textContent : ''; // titleToCopy -> keywordToCopy
+
+            if (keywordToCopy) {
+                // Use the modern Clipboard API
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(keywordToCopy).then(() => {
+                        const originalText = button.innerHTML;
+                        button.innerHTML = '✅ 복사됨!';
+                        setTimeout(() => {
+                            button.innerHTML = originalText;
+                        }, 1500); // Change back after 1.5 seconds
+                    }).catch(err => {
+                        console.error('Failed to copy text: ', err);
+                        alert('키워드 복사에 실패했습니다.');
+                    });
+                } else {
+                    // Fallback for older browsers
+                    const textArea = document.createElement('textarea');
+                    textArea.value = keywordToCopy;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    try {
+                        document.execCommand('copy');
+                        const originalText = button.innerHTML;
+                        button.innerHTML = '✅ 복사됨!';
+                        setTimeout(() => {
+                            button.innerHTML = originalText;
+                        }, 1500);
+                    } catch (err) {
+                        console.error('Fallback: Failed to copy text: ', err);
+                        alert('키워드 복사에 실패했습니다.');
+                    } finally {
+                        document.body.removeChild(textArea);
+                    }
+                }
+            }
+        });
+    });
+});
+</script>
+
+{% endblock %}
