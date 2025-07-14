@@ -1,140 +1,286 @@
-{# blog/templates/blog/shopping_keyword_click_list.html #}
-{% extends 'base.html' %}
+{# blog/templates/blog/shopping_keyword_list.html #}
+{% extends 'base.html' %} 
 
-{% block title %}클릭용 키워드 리스트{% endblock %}
+{% block title %}쇼핑 키워드 목록{% endblock %}
 
 {% load static %}
-{% block extra_head %}
-<link rel="stylesheet" href="{% static 'blog/style.css' %}"> {# 필요한 경우, CSS 파일 경로 확인 #}
-{% endblock %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
 {% block content %}
 <div class="container mt-4">
-    <h1 class="h3 mb-4">클릭용 키워드 리스트</h1>
+    {# 메시지 표시 영역 #}
+    {% if messages %}
+    <div class="messages mb-3">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
 
-    {# 키워드 그룹 필터링 버튼들 #}
-    <div class="d-flex flex-wrap ms-2 gap-1 mb-3">
-        {# "전체" 버튼 #}
-        <a href="{% url 'shopping_keyword_click_list' %}"
-           class="btn btn-outline-secondary btn-sm {% if not selected_group_name %}active{% endif %}">
-            전체
-        </a>
-        {# 각 키워드 그룹별 버튼 #}
-        {% for group_name in available_groups %}
-            <a href="?group={{ group_name }}"
-               class="btn btn-outline-primary btn-sm {% if group_name == selected_group_name %}active{% endif %}">
-                {{ group_name }}
-            </a>
-        {% endfor %}
-    </div>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">쇼핑 키워드 목록</h1>
+        <div class="btn-group">
+            <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#addSubKeywordModal">
+                <i class="bi bi-plus-circle me-1"></i> 하위 키워드 추가
+            </button>
+            <a href="{% url 'shopping_keyword_input' %}" class="btn btn-primary ms-2">새 메인 키워드 생성</a>
+            {# 여기에 클릭용 바로가기 링크 추가 #}
+            <a href="{% url 'shopping_keyword_click_list' %}" class="btn btn-info ms-2">클릭용 키워드 보기</a>
+        </div>
+    </div>
 
-    {% if keywords %} {# 'keywords' 변수로 이름 변경 #}
-    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-2">
-        {% for keyword_obj in keywords %} {# 'keyword_obj'로 변수명 변경 (blog와 혼동 방지) #}
-        <div class="col">
-            <div class="card h-100 shadow-sm compact-card">
-                <div class="card-body d-flex flex-column">
-                    {# Keyword and Copy Button on one line #}
-                    <div class="d-flex align-items-start title-container">
-                        <h5 class="card-title compact-title flex-grow-1 mb-0 me-2">
-                            <span id="keyword-text-{{ keyword_obj.pk }}" data-full-keyword="{{ keyword_obj.keyword }}">{{ keyword_obj.keyword }}</span>
-                        </h5>
-                        <button type="button"
-                                class="btn btn-sm btn-outline-secondary copy-btn text-nowrap"
-                                data-keyword-id="{{ keyword_obj.pk }}"
-                                data-bs-toggle="tooltip"
-                                data-bs-placement="top"
-                                title="클립보드에 키워드 복사">
-                            📋 복사
-                        </button>
-                    </div>              
-                    {# Main Keyword (if exists) #}
-                    <div class="compact-meta mt-1">
-                        {% if keyword_obj.main_keyword %}
-                            <small class="text-muted" style="font-size: 0.75rem;">상위: {{ keyword_obj.main_keyword.keyword }}</small>
-                        {% else %}
-                            <small class="text-muted" style="font-size: 0.75rem;">(메인 키워드)</small>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        </div>
-        {% endfor %}
-    </div>
-    {% else %}
-    <p class="alert alert-info">등록된 키워드가 없습니다.</p>
-    {% endif %}
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col">클라이언트</th>
+                            <th scope="col">메인 키워드</th>
+                            <th scope="col">키워드</th>
+                            <th scope="col">키워드 그룹</th> {# 컬럼명 추가 #}
+                            {% for d in date_range %}
+                            <th scope="col" class="text-center">{{ d|date:"m/d" }}</th>
+                            {% endfor %}
+                            <th scope="col">클릭 대상</th>
+                            <th scope="col">관리</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for keyword in keywords %}
+                        <tr {% if keyword.is_main_keyword %}class="table-primary"{% endif %}>
+                            <td>{{ keyword.client.name }}</td>
+                            <td>
+                                {% if keyword.main_keyword %}
+                                    {{ keyword.main_keyword.keyword }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if keyword.main_keyword %}
+                                <span style="padding-left: 20px;">└─ </span>
+                                {% endif %}
+                                <a href="{% url 'shopping_keyword_detail' pk=keyword.pk %}">
+                                    {{ keyword.keyword }}
+                                </a>
+                            </td>
+                            <td>
+                                {# groups 필드를 순회하며 출력 #}
+                                {% for group in keyword.groups.all %}
+                                    <span class="badge bg-info text-dark me-1">{{ group.name }}</span>
+                                {% empty %}
+                                    <span class="badge bg-secondary">미지정</span>
+                                {% endfor %}
+                            </td>
+                            {% for count in keyword.daily_clicks_display %}
+                            <td class="text-center">{{ count }}</td>
+                            {% endfor %}
+                            <td>
+                                {% if keyword.is_click_target %}
+                                <span class="badge bg-success">Y</span>
+                                {% else %}
+                                <span class="badge bg-secondary">N</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'shopping_keyword_edit' pk=keyword.pk %}" class="btn btn-sm btn-info compact-btn">수정</a>
+                                <form action="{% url 'shopping_keyword_delete' pk=keyword.pk %}" method="post" style="display:inline;" onsubmit="return confirm('정말로 삭제하시겠습니까?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-danger compact-btn">삭제</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="{{ colspan_count }}" class="text-center">등록된 쇼핑 키워드가 없습니다.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>
 
+{# 하위 키워드 추가 모달 (기존과 동일) #}
+<div class="modal fade" id="addSubKeywordModal" tabindex="-1" aria-labelledby="addSubKeywordModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addSubKeywordModalLabel">하위 키워드 추가</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="subKeywordAddForm" method="post" action="{% url 'create_sub_keyword_ajax' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    {# 여기에 AJAX 에러 메시지를 표시할 영역을 추가합니다. #}
+                    <div id="form-error-messages" class="mb-3"></div>
+
+                    <div class="mb-3">
+                        <label for="{{ sub_keyword_add_form.client.id_for_label }}" class="form-label">{{ sub_keyword_add_form.client.label }}</label>
+                        {{ sub_keyword_add_form.client }}
+                        {# AJAX 폼이므로 서버 사이드 에러 메시지는 JavaScript에서 처리합니다. #}
+                    </div>
+                    <div class="mb-3">
+                        <label for="{{ sub_keyword_add_form.main_keyword.id_for_label }}" class="form-label">{{ sub_keyword_add_form.main_keyword.label }}</label>
+                        {{ sub_keyword_add_form.main_keyword }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="{{ sub_keyword_add_form.keyword.id_for_label }}" class="form-label">{{ sub_keyword_add_form.keyword.label }}</label>
+                        {{ sub_keyword_add_form.keyword }}
+                    </div>
+                    {# keyword_group 대신 groups 필드 #}
+                    <div class="mb-3">
+                        <label class="form-label">{{ sub_keyword_add_form.groups.label }}</label>
+                        {% for checkbox in sub_keyword_add_form.groups %} {# radio에서 checkbox로 변경하여 일관성 유지 #}
+                            <div class="form-check form-check-inline">
+                                {{ checkbox.tag }}
+                                <label class="form-check-label" for="{{ checkbox.id_for_label }}">{{ checkbox.choice_label }}</label>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+                    <button type="submit" class="btn btn-primary">저장</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Function to get last 5 words from a string (이 템플릿에서는 전체 키워드 표시하므로 사용하지 않음)
-    // 하지만 원래 템플릿에서 그대로 가져온 것이므로 유지하거나 제거해도 무방합니다.
-    function getLastFiveWords(text) {
-        const words = text.trim().split(/\s+/);
-        return words.slice(-5).join(' ');
-    }
+    var subKeywordAddForm = document.getElementById('subKeywordAddForm');
+    var addSubKeywordModal = document.getElementById('addSubKeywordModal'); // 모달 요소 참조
+    var formErrorMessagesDiv = document.getElementById('form-error-messages'); // 에러 메시지 표시 영역
 
-    // Process all keyword texts (여기서는 전체 키워드 표시, 잘라내지 않음)
-    // 원래 템플릿의 blog.b_title 대신 keyword.keyword를 사용하도록 변경
-    const keywordElements = document.querySelectorAll('[id^="keyword-text-"]');
-    keywordElements.forEach(element => {
-        // data-full-keyword 속성을 사용하여 원본 키워드를 유지합니다.
-        // 여기서는 키워드를 자르지 않으므로 `element.textContent`는 이미 전체 키워드입니다.
-        // 필요한 경우, `const fullKeyword = element.dataset.fullKeyword;` 를 사용해 복사 등에 활용 가능
-    });
+    // 초기 에러 메시지 제거 함수 (모달이 열릴 때나 폼 제출 전 호출)
+    function clearErrorMessages() {
+        document.querySelectorAll('#subKeywordAddForm .text-danger.small').forEach(el => el.remove());
+        if (formErrorMessagesDiv) {
+            formErrorMessagesDiv.innerHTML = ''; // 전역 에러 메시지 영역 비우기
+        }
+    }
 
-    // Initialize tooltips (requires Bootstrap JS and Popper.js)
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-      return new bootstrap.Tooltip(tooltipTriggerEl);
-    });
+    if (subKeywordAddForm) {
+        subKeywordAddForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            clearErrorMessages(); // 폼 제출 시 기존 에러 메시지 모두 제거
 
-    const copyButtons = document.querySelectorAll('.copy-btn');
+            const formData = new FormData(this);
 
-    copyButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            const keywordId = this.dataset.keywordId; // data-blog-id -> data-keyword-id
-            const keywordElement = document.getElementById(`keyword-text-${keywordId}`); // blog-title -> keyword-text
-            const keywordToCopy = keywordElement ? keywordElement.textContent : ''; // titleToCopy -> keywordToCopy
+            fetch(this.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    // HTTP 에러 상태 (예: 400, 500) 시 JSON 파싱 시도
+                    return response.json().then(errorData => {
+                        throw errorData; // 파싱된 에러 데이터를 catch 블록으로 던짐
+                    });
+                }
+                return response.json(); // 성공 시 JSON 응답 파싱
+            })
+            .then(data => {
+                if (data.status === 'success') {
+                    // 성공 메시지 표시 (alert 대신 toast나 모달 내부에 표시하는 것이 더 좋습니다)
+                    alert(data.message); 
+                    
+                    // 모달 닫기
+                    var modalInstance = bootstrap.Modal.getInstance(addSubKeywordModal);
+                    if (modalInstance) {
+                        modalInstance.hide();
+                    }
+                    
+                    // 페이지 새로고침
+                    location.reload(); 
+                } else {
+                    // 유효성 검사 실패 (status: 'error')
+                    // data.errors가 문자열일 수도, 이미 객체일 수도 있습니다.
+                    const errors = typeof data.errors === 'string' ? JSON.parse(data.errors) : data.errors;
+                    
+                    // 전역 에러 메시지 표시 (unique_together 같은 __all__ 오류)
+                    if (errors && errors.__all__) {
+                        const allErrorsDiv = document.createElement('div');
+                        allErrorsDiv.className = 'alert alert-danger alert-dismissible fade show';
+                        allErrorsDiv.setAttribute('role', 'alert');
+                        allErrorsDiv.innerHTML = errors.__all__.map(err => `<p class="mb-0">${err.message || err}</p>`).join('');
+                        allErrorsDiv.innerHTML += '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>';
+                        if (formErrorMessagesDiv) {
+                            formErrorMessagesDiv.appendChild(allErrorsDiv);
+                        }
+                        // __all__ 에러는 여기서 처리했으니 errors 객체에서 제거
+                        delete errors.__all__; 
+                    }
 
-            if (keywordToCopy) {
-                // Use the modern Clipboard API
-                if (navigator.clipboard && navigator.clipboard.writeText) {
-                    navigator.clipboard.writeText(keywordToCopy).then(() => {
-                        const originalText = button.innerHTML;
-                        button.innerHTML = '✅ 복사됨!';
-                        setTimeout(() => {
-                            button.innerHTML = originalText;
-                        }, 1500); // Change back after 1.5 seconds
-                    }).catch(err => {
-                        console.error('Failed to copy text: ', err);
-                        alert('키워드 복사에 실패했습니다.');
-                    });
-                } else {
-                    // Fallback for older browsers
-                    const textArea = document.createElement('textarea');
-                    textArea.value = keywordToCopy;
-                    document.body.appendChild(textArea);
-                    textArea.select();
-                    try {
-                        document.execCommand('copy');
-                        const originalText = button.innerHTML;
-                        button.innerHTML = '✅ 복사됨!';
-                        setTimeout(() => {
-                            button.innerHTML = originalText;
-                        }, 1500);
-                    } catch (err) {
-                        console.error('Fallback: Failed to copy text: ', err);
-                        alert('키워드 복사에 실패했습니다.');
-                    } finally {
-                        document.body.removeChild(textArea);
-                    }
-                }
-            }
-        });
-    });
+                    // 개별 필드 에러 표시
+                    for (const fieldName in errors) {
+                        if (errors.hasOwnProperty(fieldName)) {
+                            const fieldErrors = errors[fieldName];
+                            let formFieldContainer;
+
+                            // groups 필드는 CheckboxSelectMultiple이므로, label for "id_groups_0"을 통해 부모 mb-3 찾기
+                            if (fieldName === 'groups') {
+                                // 첫 번째 체크박스에 연결된 라벨을 찾아 가장 가까운 .mb-3 부모를 찾습니다.
+                                const firstCheckboxLabel = document.querySelector(`label[for="id_${fieldName}_0"]`);
+                                if (firstCheckboxLabel) {
+                                    formFieldContainer = firstCheckboxLabel.closest('.mb-3');
+                                }
+                            } else {
+                                // 다른 필드들은 id_필드명으로 직접 input 엘리먼트의 부모를 찾습니다.
+                                const inputElement = document.getElementById(`id_${fieldName}`);
+                                if (inputElement) {
+                                    formFieldContainer = inputElement.closest('.mb-3');
+                                }
+                            }
+                            
+                            if (formFieldContainer) {
+                                const errorDiv = document.createElement('div');
+                                errorDiv.className = 'text-danger small mt-1'; // 에러 메시지 상단에 약간의 여백 추가
+                                errorDiv.innerHTML = fieldErrors.map(err => `<p class="mb-0">${err.message || err}</p>`).join('');
+                                formFieldContainer.appendChild(errorDiv);
+                            }
+                        }
+                    }
+                    // alert('하위 키워드 추가 실패: ' + (data.message || '유효성 검사 실패.')); // 필드별 에러가 표시되므로 이 alert는 불필요할 수 있음
+                }
+            })
+            .catch(error => {
+                // 네트워크 오류 또는 서버에서 JSON이 아닌 다른 응답을 보냈을 때
+                console.error('Fetch Error:', error);
+                let errorMessage = '하위 키워드 추가 중 예상치 못한 오류가 발생했습니다.';
+                // 에러 객체가 메시지를 포함하는 경우 (HTTP 응답에서 넘어온 JSON 에러 데이터)
+                if (error && typeof error === 'object' && error.message) {
+                    errorMessage = `하위 키워드 추가 실패: ${error.message}`;
+                } else if (typeof error === 'string') {
+                    errorMessage = `하위 키워드 추가 실패: ${error}`;
+                }
+                alert(errorMessage);
+            });
+        });
+    }
+
+    // 모달이 닫힐 때 폼 초기화 및 에러 메시지 제거
+    if (addSubKeywordModal) {
+        addSubKeywordModal.addEventListener('hidden.bs.modal', function () {
+            if (subKeywordAddForm) {
+                subKeywordAddForm.reset();
+                clearErrorMessages(); // 모달 닫힐 때도 에러 메시지 초기화
+            }
+        });
+    }
 });
 </script>
-
 {% endblock %}
