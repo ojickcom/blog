@@ -85,33 +85,26 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form id="mainKeywordForm" method="post" action="{% url 'create_main_keyword_ajax' %}">
-                {% csrf_token %}
-                <div class="modal-body">
-                    {# 클라이언트 선택 #}
-           {# 클라이언트 선택 #}
-                    <div class="mb-3">
-                        <label for="id_client" class="form-label">{{ main_keyword_form.client.label }}</label>
-                        {{ main_keyword_form.client }}
-                        {% if main_keyword_form.client.errors %}
-                            <div class="text-danger small">{{ main_keyword_form.client.errors }}</div>
-                        {% endif %}
-                    </div>
-                    {# 키워드 이름 입력 #}
-                    <div class="mb-3">
-                        <label for="id_keyword" class="form-label">{{ main_keyword_form.keyword.label }}</label>
-                        {{ main_keyword_form.keyword }}
-                        {% if main_keyword_form.keyword.errors %}
-                            <div class="text-danger small">{{ main_keyword_form.keyword.errors }}</div>
-                        {% endif %}
-                    </div>
-                    {# 키워드 그룹 (hidden input) #}
-                    {{ main_keyword_form.keyword_group }}
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
-                    <button type="submit" class="btn btn-primary">저장</button>
-                </div>
-            </form>
+    {% csrf_token %}
+    <div class="modal-body">
+
+        {# ✅ 클라이언트 선택 #}
+        <div class="mb-3">
+            <label for="id_client" class="form-label">{{ main_keyword_form.client.label }}</label>
+            {{ main_keyword_form.client }}
+        </div>
+
+        {# ✅ main_keyword 입력 필드 사용 (변경됨) #}
+        <div class="mb-3">
+            <label for="id_main_keyword" class="form-label">{{ main_keyword_form.main_keyword.label }}</label>
+            {{ main_keyword_form.main_keyword }}
+        </div>
+
+        {{ main_keyword_form.keyword_group }} {# hidden input 유지 #}
+    </div>
+    ...
+</form>
+
         </div>
     </div>
 </div>
