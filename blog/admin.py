@@ -5,8 +5,10 @@ from .models import Blog, Client, ContentSubhead, NumberCharacter, TalkStyle, Co
 # Client 모델 관리자 등록 (이전과 동일)
 @admin.register(Client)
 class ClientAdmin(admin.ModelAdmin):
-    list_display = ['name', 'client_type', 'image_url']
+    list_display = ['name', 'client_type', 'image_url','is_completed', 'payment_amount']
     list_filter = ['client_type']
+    list_editable = ('is_completed', 'payment_amount')
+    fields = ('name', 'client_type', 'image_url', 'payment_amount', 'is_completed') # 편집 페이지에 표시할 필드 순서
     search_fields = ['name']
 
 # ContentSubhead 모델 관리자 등록 (이전과 동일)
