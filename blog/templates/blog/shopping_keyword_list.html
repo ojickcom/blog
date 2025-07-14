@@ -88,8 +88,9 @@
                 {% csrf_token %}
                 <div class="modal-body">
                     {# 클라이언트 선택 #}
+           {# 클라이언트 선택 #}
                     <div class="mb-3">
-                        <label for="id_client_main" class="form-label">{{ main_keyword_form.client.label }}</label>
+                        <label for="id_client" class="form-label">{{ main_keyword_form.client.label }}</label>
                         {{ main_keyword_form.client }}
                         {% if main_keyword_form.client.errors %}
                             <div class="text-danger small">{{ main_keyword_form.client.errors }}</div>
@@ -97,14 +98,14 @@
                     </div>
                     {# 키워드 이름 입력 #}
                     <div class="mb-3">
-                        <label for="id_keyword_main" class="form-label">{{ main_keyword_form.main_keyword.label }}</label>
-                        {{ main_keyword_form.main_keyword }}
-                        {% if main_keyword_form.main_keyword.errors %}
-                            <div class="text-danger small">{{ main_keyword_form.main_keyword.errors }}</div>
+                        <label for="id_keyword" class="form-label">{{ main_keyword_form.keyword.label }}</label>
+                        {{ main_keyword_form.keyword }}
+                        {% if main_keyword_form.keyword.errors %}
+                            <div class="text-danger small">{{ main_keyword_form.keyword.errors }}</div>
                         {% endif %}
                     </div>
-                    {# 키워드 그룹 (hidden input) - 이제 label 없이 바로 필드만 렌더링 #}
-                    {{ main_keyword_form.keyword_group }} 
+                    {# 키워드 그룹 (hidden input) #}
+                    {{ main_keyword_form.keyword_group }}
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
@@ -162,7 +163,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 alert(`키워드 그룹 오류: ${fieldErrors.join(', ')}`);
                                 continue; 
                             }
-                            const inputElement = document.getElementById(`id_${fieldName}_main`);
+                            const inputElement = document.getElementById(`id_${fieldName}`);
                             if (inputElement) {
                                 const errorDiv = document.createElement('div');
                                 errorDiv.className = 'text-danger small';
