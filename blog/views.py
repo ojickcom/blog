@@ -153,7 +153,46 @@ def blog_complete(request, pk):
     
 @login_required
 def shopping_keyword_list(request):
-    all_keywords = ShoppingKeyword.objects.select_related('client', 'main_keyword').order_by('client__name', 'main_keyword__keyword__isnull', 'main_keyword__keyword', 'keyword')
+    # 'main_keyword__isnull'을 사용하여 main_keyword 필드가 NULL인 것(즉, 메인 키워드)을 먼저 정렬하고,
+    # 그 다음에 main_keyword의 keyword로 정렬 (하위 키워드가 상위 키워드 아래에 오도록),
+    # 마지막으로 자신의 keyword로 정렬합니다.
+    all_keywords = ShoppingKeyword.objects.select_related('client', 'main_keyword').order_by(
+        'client__name',          # 클라이언트 이름으로 1차 정렬
+        '-main_keyword__isnull', # main_keyword가 NULL이 아닌(즉, 서브 키워드) 것이 먼저 오도록 (False=0, True=1 이므로 -를 붙여서 1이 먼저 오게)
+                                 # 또는 단순히 main_keyword__isnull (True가 먼저 오도록)
+                                 # 정확히 의도하는 바에 따라 변경 (보통 메인 키워드가 먼저 오도록)
+                                 # 메인 키워드가 NULL인 것을 먼저: 'main_keyword__isnull'
+                                 # 메인 키워드가 NULL이 아닌 것을 먼저: '-main_keyword__isnull'
+        'main_keyword__keyword', # 상위 메인 키워드의 이름으로 정렬
+        'keyword'                # 최종적으로 자신의 키워드 이름으로 정렬
+    )
+
+    # all_keywords 쿼리셋을 아래와 같이 수정하는 것이 일반적인 정렬 방식입니다:
+    # 1. 클라이언트 이름 순서
+    # 2. (메인 키워드인 경우) 메인 키워드가 없는 것을 먼저 (True = 1, False = 0이므로, True가 먼저 오려면 순방향)
+    # 3. 메인 키워드 이름을 기준으로
+    # 4. 하위 키워드 이름을 기준으로
+    # all_keywords = ShoppingKeyword.objects.select_related('client', 'main_keyword').order_by(
+    #     'client__name',
+    #     'main_keyword__isnull', # True (main_keyword가 NULL)가 먼저 옴
+    #     'main_keyword__keyword',
+    #     'keyword'
+    # )
+    
+    # 💡 정렬 순서에 대한 해석:
+    # 만약 '메인 키워드'가 제일 위에 오고 그 아래에 '하위 키워드'들이 나타나기를 원한다면:
+    # 'main_keyword__isnull' (NULL인 메인 키워드 = True, NULL이 아닌 하위 키워드 = False)
+    # True가 먼저 오므로 메인 키워드가 목록 상단에 위치합니다.
+    all_keywords = ShoppingKeyword.objects.select_related('client', 'main_keyword').order_by(
+        'client__name',          # 클라이언트별로 묶음
+        '-main_keyword__isnull', # 메인 키워드(main_keyword가 NULL인 것)가 먼저 오도록 합니다.
+                                 # 이 경우 main_keyword가 NULL이면 True, 아니면 False.
+                                 # 기본 정렬은 False가 먼저 오지만, 앞에 '-'를 붙이면 True가 먼저 옵니다.
+                                 # 즉, main_keyword가 NULL인 항목들이 (메인 키워드) 먼저 오게 됩니다.
+        'main_keyword__keyword', # 해당 메인 키워드 이름으로 정렬 (예: 애플 > 아이폰, 애플 > 아이패드)
+        'keyword'                # 최종적으로 개별 키워드 이름으로 정렬
+    )
+
 
     today = date.today()
     date_range = [today - timedelta(days=i) for i in range(7)] 
@@ -173,14 +212,13 @@ def shopping_keyword_list(request):
 
     colspan_count = 5 + len(date_range) 
     
-    # "메인 키워드 추가" 모달에 전달할 폼 인스턴스 (-> SubKeywordAddForm)
     sub_keyword_add_form = SubKeywordAddForm() 
 
     context = {
         'keywords': all_keywords,
         'date_range': date_range,
         'colspan_count': colspan_count,
-        'sub_keyword_add_form': sub_keyword_add_form, # 모달용 폼 이름 변경 및 전달
+        'sub_keyword_add_form': sub_keyword_add_form, 
     }
     return render(request, 'blog/shopping_keyword_list.html', context)
 
