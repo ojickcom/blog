@@ -10,8 +10,6 @@
 
 {% block content %}
 <div class="container mt-4">
-    <h1 class="h3 mb-4">클릭용 키워드 리스트</h1>
-
     {# 키워드 그룹 필터링 버튼들 #}
     <div class="d-flex flex-wrap ms-2 gap-1 mb-3">
         {# "전체" 버튼 #}
@@ -66,24 +64,26 @@
     {% endif %}
 </div>
 
+<div class="modal fade" id="copySuccessModal" tabindex="-1" aria-labelledby="copySuccessModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="copySuccessModalLabel">복사 완료</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center">
+        <p class="mb-0">✅ 키워드가 성공적으로 복사되었습니다!</p>
+        <strong id="copiedKeywordText"></strong>
+      </div>
+      <div class="modal-footer justify-content-center">
+        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">확인</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Function to get last 5 words from a string (이 템플릿에서는 전체 키워드 표시하므로 사용하지 않음)
-    // 하지만 원래 템플릿에서 그대로 가져온 것이므로 유지하거나 제거해도 무방합니다.
-    function getLastFiveWords(text) {
-        const words = text.trim().split(/\s+/);
-        return words.slice(-5).join(' ');
-    }
-
-    // Process all keyword texts (여기서는 전체 키워드 표시, 잘라내지 않음)
-    // 원래 템플릿의 blog.b_title 대신 keyword.keyword를 사용하도록 변경
-    const keywordElements = document.querySelectorAll('[id^="keyword-text-"]');
-    keywordElements.forEach(element => {
-        // data-full-keyword 속성을 사용하여 원본 키워드를 유지합니다.
-        // 여기서는 키워드를 자르지 않으므로 `element.textContent`는 이미 전체 키워드입니다.
-        // 필요한 경우, `const fullKeyword = element.dataset.fullKeyword;` 를 사용해 복사 등에 활용 가능
-    });
-
     // Initialize tooltips (requires Bootstrap JS and Popper.js)
     var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
     var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
@@ -91,22 +91,26 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     const copyButtons = document.querySelectorAll('.copy-btn');
+    const copySuccessModal = new bootstrap.Modal(document.getElementById('copySuccessModal'));
+    const copiedKeywordTextElement = document.getElementById('copiedKeywordText');
 
     copyButtons.forEach(button => {
         button.addEventListener('click', function() {
-            const keywordId = this.dataset.keywordId; // data-blog-id -> data-keyword-id
-            const keywordElement = document.getElementById(`keyword-text-${keywordId}`); // blog-title -> keyword-text
-            const keywordToCopy = keywordElement ? keywordElement.textContent : ''; // titleToCopy -> keywordToCopy
+            const keywordId = this.dataset.keywordId;
+            const keywordElement = document.getElementById(`keyword-text-${keywordId}`);
+            const keywordToCopy = keywordElement ? keywordElement.textContent : '';
 
             if (keywordToCopy) {
-                // Use the modern Clipboard API
                 if (navigator.clipboard && navigator.clipboard.writeText) {
                     navigator.clipboard.writeText(keywordToCopy).then(() => {
-                        const originalText = button.innerHTML;
-                        button.innerHTML = '✅ 복사됨!';
+                        // Update modal content and show modal
+                        copiedKeywordTextElement.textContent = `"${keywordToCopy}"`;
+                        copySuccessModal.show();
+
+                        // Optionally, hide modal after a few seconds
                         setTimeout(() => {
-                            button.innerHTML = originalText;
-                        }, 1500); // Change back after 1.5 seconds
+                            copySuccessModal.hide();
+                        }, 2000); // Hide after 2 seconds
                     }).catch(err => {
                         console.error('Failed to copy text: ', err);
                         alert('키워드 복사에 실패했습니다.');
@@ -119,11 +123,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     textArea.select();
                     try {
                         document.execCommand('copy');
-                        const originalText = button.innerHTML;
-                        button.innerHTML = '✅ 복사됨!';
+                        // Update modal content and show modal
+                        copiedKeywordTextElement.textContent = `"${keywordToCopy}"`;
+                        copySuccessModal.show();
+
+                        // Optionally, hide modal after a few seconds
                         setTimeout(() => {
-                            button.innerHTML = originalText;
-                        }, 1500);
+                            copySuccessModal.hide();
+                        }, 2000); // Hide after 2 seconds
                     } catch (err) {
                         console.error('Fallback: Failed to copy text: ', err);
                         alert('키워드 복사에 실패했습니다.');
