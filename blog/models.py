@@ -166,3 +166,16 @@ class KeywordClick(models.Model):
 
     def __str__(self):
         return f"{self.keyword.keyword} - {self.click_date}: {self.click_count}회"
+    
+class Expense(models.Model):
+    name = models.CharField(max_length=200, verbose_name="비용 이름")
+    price = models.IntegerField(verbose_name="가격")
+    is_recurring = models.BooleanField(default=False, verbose_name="항시(자동 반복)")
+    date = models.DateField(default=timezone.now, verbose_name="지출일") # 비용이 발생한 날짜
+
+    def __str__(self):
+        return self.name
+        
+    class Meta:
+        verbose_name = "비용"
+        verbose_name_plural = "비용"

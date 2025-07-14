@@ -18,7 +18,11 @@ class ContentSubheadAdmin(admin.ModelAdmin):
     list_filter = ['client']
     search_fields = ['name']
     raw_id_fields = ['client']
-
+@admin.register(ContentSubhead)
+class ExpenseAdmin(admin.ModelAdmin):
+    list_display = ('name', 'price', 'is_recurring', 'date')
+    list_filter = ('is_recurring',)
+    search_fields = ('name',)
 # 제목 구성 요소 모델들 등록 (이전과 동일)
 @admin.register(NumberCharacter)
 class NumberCharacterAdmin(admin.ModelAdmin):
