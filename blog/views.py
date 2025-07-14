@@ -9,8 +9,6 @@ from datetime import date, timedelta
 from django.db.models import OuterRef, Subquery, Sum
 from .models import Blog, Client, ContentSubhead, NumberCharacter, TalkStyle, ContentAspect,  ShoppingKeyword, KeywordClick,Expense
 from .forms import BlogForm, ShoppingKeywordForm
-from django.db.models.functions import TruncDate
-from django.utils.dateparse import parse_date
 import random
 from datetime import datetime    # 날짜 처리를 위해 추가
 
@@ -21,28 +19,14 @@ from datetime import datetime    # 날짜 처리를 위해 추가
 @login_required
 def blog_list_completed(request):
     """작성 완료된 글 + 날짜 필터링"""
-    selected_date = request.GET.get('date')  # URL에서 날짜 파라미터 받기
     blogs_query = Blog.objects.filter(blog_write=True).select_related('client')
-    
-    if selected_date:
-        blogs_query = blogs_query.filter(written_date__date=parse_date(selected_date))
     
     blogs_completed = blogs_query.order_by('-written_date')
 
-    # 날짜 목록 생성
-    available_dates = (
-        Blog.objects.filter(blog_write=True)
-        .annotate(date_only=TruncDate('written_date'))
-        .values_list('date_only', flat=True)
-        .distinct()
-        .order_by('-date_only')
-    )
 
     return render(request, 'blog/list_completed.html', {
         'blogs': blogs_completed,
         'list_title': '트래픽 용도 글',
-        'available_dates': available_dates,
-        'selected_date': selected_date,
     })
 
 @login_required

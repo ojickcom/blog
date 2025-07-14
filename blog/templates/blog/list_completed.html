@@ -11,11 +11,6 @@
     <h2 class="mb-4 compact-header">{{ list_title }}</h2>
 <div class="d-flex flex-wrap ms-2 gap-1">
         <a href="{% url request.resolver_match.url_name %}" class="btn btn-outline-secondary btn-sm {% if not selected_date %}active{% endif %}">전체</a>
-        {% for date in available_dates %}
-            <a href="?date={{ date }}" class="btn btn-outline-primary btn-sm {% if date|stringformat:"s" == selected_date %}active{% endif %}">
-                {{ date }}
-            </a>
-        {% endfor %}
     </div>
 
     {% if blogs %}
