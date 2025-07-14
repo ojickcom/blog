@@ -87,22 +87,26 @@
             <form id="mainKeywordForm" method="post" action="{% url 'create_main_keyword_ajax' %}">
     {% csrf_token %}
     <div class="modal-body">
-
-        {# ✅ 클라이언트 선택 #}
+        <!-- ✅ 클라이언트 선택 -->
         <div class="mb-3">
             <label for="id_client" class="form-label">{{ main_keyword_form.client.label }}</label>
             {{ main_keyword_form.client }}
         </div>
 
-        {# ✅ main_keyword 입력 필드 사용 (변경됨) #}
+        <!-- ✅ main_keyword 입력 필드 -->
         <div class="mb-3">
             <label for="id_main_keyword" class="form-label">{{ main_keyword_form.main_keyword.label }}</label>
             {{ main_keyword_form.main_keyword }}
         </div>
 
-        {{ main_keyword_form.keyword_group }} {# hidden input 유지 #}
+        {{ main_keyword_form.keyword_group }} <!-- hidden input 유지 -->
     </div>
-    ...
+
+    <!-- ✅ 저장 버튼은 여기에서! -->
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+        <button type="submit" class="btn btn-primary">저장</button>
+    </div>
 </form>
 
         </div>
