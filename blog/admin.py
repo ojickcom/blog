@@ -1,6 +1,6 @@
 # blog/admin.py
 from django.contrib import admin
-from .models import Blog, Client, ContentSubhead, NumberCharacter, TalkStyle, ContentAspect,  ShoppingKeyword, KeywordClick, Client 
+from .models import Blog, Client, ContentSubhead, NumberCharacter, TalkStyle, ContentAspect,  ShoppingKeyword, KeywordClick, Client, Expense
 
 # Client 모델 관리자 등록 (이전과 동일)
 @admin.register(Client)
@@ -69,3 +69,5 @@ class KeywordClickAdmin(admin.ModelAdmin):
     list_filter = ('click_date', 'keyword__client')
     search_fields = ('keyword__keyword',)
     date_hierarchy = 'click_date' # 날짜별 계층 구조 보기
+
+    admin.site.register(Expense, ExpenseAdmin)
