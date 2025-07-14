@@ -116,47 +116,31 @@
             <form id="subKeywordAddForm" method="post" action="{% url 'create_sub_keyword_ajax' %}">
                 {% csrf_token %}
                 <div class="modal-body">
+                    {# 여기에 AJAX 에러 메시지를 표시할 영역을 추가합니다. #}
+                    <div id="form-error-messages" class="mb-3"></div>
+
                     <div class="mb-3">
                         <label for="{{ sub_keyword_add_form.client.id_for_label }}" class="form-label">{{ sub_keyword_add_form.client.label }}</label>
                         {{ sub_keyword_add_form.client }}
-                        {% if sub_keyword_add_form.client.errors %}
-                            <div class="text-danger small">
-                                {% for error in sub_keyword_add_form.client.errors %}<p class="mb-0">{{ error }}</p>{% endfor %}
-                            </div>
-                        {% endif %}
+                        {# AJAX 폼이므로 서버 사이드 에러 메시지는 JavaScript에서 처리합니다. #}
                     </div>
                     <div class="mb-3">
                         <label for="{{ sub_keyword_add_form.main_keyword.id_for_label }}" class="form-label">{{ sub_keyword_add_form.main_keyword.label }}</label>
                         {{ sub_keyword_add_form.main_keyword }}
-                        {% if sub_keyword_add_form.main_keyword.errors %}
-                            <div class="text-danger small">
-                                {% for error in sub_keyword_add_form.main_keyword.errors %}<p class="mb-0">{{ error }}</p>{% endfor %}
-                            </div>
-                        {% endif %}
                     </div>
                     <div class="mb-3">
                         <label for="{{ sub_keyword_add_form.keyword.id_for_label }}" class="form-label">{{ sub_keyword_add_form.keyword.label }}</label>
                         {{ sub_keyword_add_form.keyword }}
-                        {% if sub_keyword_add_form.keyword.errors %}
-                            <div class="text-danger small">
-                                {% for error in sub_keyword_add_form.keyword.errors %}<p class="mb-0">{{ error }}</p>{% endfor %}
-                            </div>
-                        {% endif %}
                     </div>
                     {# keyword_group 대신 groups 필드 #}
                     <div class="mb-3">
                         <label class="form-label">{{ sub_keyword_add_form.groups.label }}</label>
-                        {% for radio in sub_keyword_add_form.groups %}
+                        {% for checkbox in sub_keyword_add_form.groups %} {# radio에서 checkbox로 변경하여 일관성 유지 #}
                             <div class="form-check form-check-inline">
-                                {{ radio.tag }}
-                                <label class="form-check-label" for="{{ radio.id_for_label }}">{{ radio.choice_label }}</label>
+                                {{ checkbox.tag }}
+                                <label class="form-check-label" for="{{ checkbox.id_for_label }}">{{ checkbox.choice_label }}</label>
                             </div>
                         {% endfor %}
-                        {% if sub_keyword_add_form.groups.errors %}
-                            <div class="text-danger small">
-                                {% for error in sub_keyword_add_form.groups.errors %}<p class="mb-0">{{ error }}</p>{% endfor %}
-                            </div>
-                        {% endif %}
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -174,9 +158,21 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     var subKeywordAddForm = document.getElementById('subKeywordAddForm');
+    var addSubKeywordModal = document.getElementById('addSubKeywordModal'); // 모달 요소 참조
+    var formErrorMessagesDiv = document.getElementById('form-error-messages'); // 에러 메시지 표시 영역
+
+    // 초기 에러 메시지 제거 함수 (모달이 열릴 때나 폼 제출 전 호출)
+    function clearErrorMessages() {
+        document.querySelectorAll('#subKeywordAddForm .text-danger.small').forEach(el => el.remove());
+        if (formErrorMessagesDiv) {
+            formErrorMessagesDiv.innerHTML = ''; // 전역 에러 메시지 영역 비우기
+        }
+    }
+
     if (subKeywordAddForm) {
         subKeywordAddForm.addEventListener('submit', function(e) {
             e.preventDefault();
+            clearErrorMessages(); // 폼 제출 시 기존 에러 메시지 모두 제거
 
             const formData = new FormData(this);
 
@@ -189,59 +185,99 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(response => {
                 if (!response.ok) {
+                    // HTTP 에러 상태 (예: 400, 500) 시 JSON 파싱 시도
                     return response.json().then(errorData => {
-                        throw errorData;
+                        throw errorData; // 파싱된 에러 데이터를 catch 블록으로 던짐
                     });
                 }
-                return response.json();
+                return response.json(); // 성공 시 JSON 응답 파싱
             })
             .then(data => {
                 if (data.status === 'success') {
-                    alert(data.message);
-                    var modal = bootstrap.Modal.getInstance(document.getElementById('addSubKeywordModal'));
-                    if (modal) {
-                        modal.hide();
+                    // 성공 메시지 표시 (alert 대신 toast나 모달 내부에 표시하는 것이 더 좋습니다)
+                    alert(data.message); 
+                    
+                    // 모달 닫기
+                    var modalInstance = bootstrap.Modal.getInstance(addSubKeywordModal);
+                    if (modalInstance) {
+                        modalInstance.hide();
                     }
-                    location.reload();
+                    
+                    // 페이지 새로고침
+                    location.reload(); 
                 } else {
-                    const errors = JSON.parse(data.errors);
-                    document.querySelectorAll('.text-danger.small').forEach(el => el.remove());
+                    // 유효성 검사 실패 (status: 'error')
+                    // data.errors가 문자열일 수도, 이미 객체일 수도 있습니다.
+                    const errors = typeof data.errors === 'string' ? JSON.parse(data.errors) : data.errors;
+                    
+                    // 전역 에러 메시지 표시 (unique_together 같은 __all__ 오류)
+                    if (errors && errors.__all__) {
+                        const allErrorsDiv = document.createElement('div');
+                        allErrorsDiv.className = 'alert alert-danger alert-dismissible fade show';
+                        allErrorsDiv.setAttribute('role', 'alert');
+                        allErrorsDiv.innerHTML = errors.__all__.map(err => `<p class="mb-0">${err.message || err}</p>`).join('');
+                        allErrorsDiv.innerHTML += '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>';
+                        if (formErrorMessagesDiv) {
+                            formErrorMessagesDiv.appendChild(allErrorsDiv);
+                        }
+                        // __all__ 에러는 여기서 처리했으니 errors 객체에서 제거
+                        delete errors.__all__; 
+                    }
 
+                    // 개별 필드 에러 표시
                     for (const fieldName in errors) {
                         if (errors.hasOwnProperty(fieldName)) {
                             const fieldErrors = errors[fieldName];
-                            // CheckboxSelectMultiple의 경우, inputElement가 아닐 수 있으므로 부모 요소를 찾아야 함.
-                            const formFieldContainer = document.querySelector(`label[for="id_${fieldName}_0"]`) ? document.querySelector(`label[for="id_${fieldName}_0"]`).closest('.mb-3') : document.getElementById(`id_${fieldName}`) ? document.getElementById(`id_${fieldName}`).closest('.mb-3') : null;
+                            let formFieldContainer;
 
+                            // groups 필드는 CheckboxSelectMultiple이므로, label for "id_groups_0"을 통해 부모 mb-3 찾기
+                            if (fieldName === 'groups') {
+                                // 첫 번째 체크박스에 연결된 라벨을 찾아 가장 가까운 .mb-3 부모를 찾습니다.
+                                const firstCheckboxLabel = document.querySelector(`label[for="id_${fieldName}_0"]`);
+                                if (firstCheckboxLabel) {
+                                    formFieldContainer = firstCheckboxLabel.closest('.mb-3');
+                                }
+                            } else {
+                                // 다른 필드들은 id_필드명으로 직접 input 엘리먼트의 부모를 찾습니다.
+                                const inputElement = document.getElementById(`id_${fieldName}`);
+                                if (inputElement) {
+                                    formFieldContainer = inputElement.closest('.mb-3');
+                                }
+                            }
+                            
                             if (formFieldContainer) {
                                 const errorDiv = document.createElement('div');
-                                errorDiv.className = 'text-danger small';
-                                errorDiv.innerHTML = fieldErrors.map(err => `<p class="mb-0">${err.message}</p>`).join('');
-                                formFieldContainer.appendChild(errorDiv); // 에러 메시지를 컨테이너에 추가
+                                errorDiv.className = 'text-danger small mt-1'; // 에러 메시지 상단에 약간의 여백 추가
+                                errorDiv.innerHTML = fieldErrors.map(err => `<p class="mb-0">${err.message || err}</p>`).join('');
+                                formFieldContainer.appendChild(errorDiv);
                             }
                         }
                     }
-                    alert('하위 키워드 추가 실패: ' + data.message);
+                    // alert('하위 키워드 추가 실패: ' + (data.message || '유효성 검사 실패.')); // 필드별 에러가 표시되므로 이 alert는 불필요할 수 있음
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
+                // 네트워크 오류 또는 서버에서 JSON이 아닌 다른 응답을 보냈을 때
+                console.error('Fetch Error:', error);
                 let errorMessage = '하위 키워드 추가 중 예상치 못한 오류가 발생했습니다.';
+                // 에러 객체가 메시지를 포함하는 경우 (HTTP 응답에서 넘어온 JSON 에러 데이터)
                 if (error && typeof error === 'object' && error.message) {
-                    errorMessage += ` ${error.message}`;
+                    errorMessage = `하위 키워드 추가 실패: ${error.message}`;
                 } else if (typeof error === 'string') {
-                    errorMessage += ` ${error}`;
+                    errorMessage = `하위 키워드 추가 실패: ${error}`;
                 }
                 alert(errorMessage);
             });
         });
     }
 
-    var addSubKeywordModal = document.getElementById('addSubKeywordModal');
+    // 모달이 닫힐 때 폼 초기화 및 에러 메시지 제거
     if (addSubKeywordModal) {
         addSubKeywordModal.addEventListener('hidden.bs.modal', function () {
-            subKeywordAddForm.reset();
-            document.querySelectorAll('.text-danger.small').forEach(el => el.remove());
+            if (subKeywordAddForm) {
+                subKeywordAddForm.reset();
+                clearErrorMessages(); // 모달 닫힐 때도 에러 메시지 초기화
+            }
         });
     }
 });
