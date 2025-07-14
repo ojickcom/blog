@@ -132,22 +132,38 @@ class Blog(models.Model):
         verbose_name = "블로그 게시물"
         verbose_name_plural = "블로그 게시물"
 class ShoppingKeyword(models.Model):
+    # 1. client는 Client 모델을 참조하며, 'shopping' 또는 '쇼핑'과 같은 특정 값에 귀속됩니다.
+    #    이는 모델 필드 자체에서 강제하기보다는, 데이터 입력 또는 폼에서 제어하는 것이 일반적입니다.
+    #    여기서는 단순히 Client 모델을 ForeignKey로 참조합니다.
     client = models.ForeignKey(
         'Client',
         on_delete=models.CASCADE,
         related_name='shopping_keywords',
         verbose_name="클라이언트"
     )
+
+    # 4. keyword는 main_keyword에 귀속됩니다.
+    #    이 필드는 키워드 자체의 문자열을 저장합니다.
     keyword = models.CharField(max_length=255, verbose_name="키워드")
+
+    # 2. main_keyword: client에 귀속됩니다.
+    #    'self' 참조는 이 키워드가 다른 ShoppingKeyword 객체(메인 키워드)의 서브 키워드임을 나타냅니다.
+    #    main_keyword가 NULL이면 이 객체 자체가 메인 키워드입니다.
+    #    on_delete=models.SET_NULL: 메인 키워드가 삭제되면 서브 키워드의 main_keyword 필드를 NULL로 설정합니다.
+    #    blank=True, null=True: 이 필드는 선택 사항입니다 (메인 키워드인 경우).
+    #    limit_choices_to=models.Q(): 이 부분은 admin.py에서 상세 필터링을 설정할 것임을 나타냅니다.
     main_keyword = models.ForeignKey(
         'self',
         on_delete=models.SET_NULL,
         blank=True,
         null=True,
         limit_choices_to=models.Q(),  # admin.py에서 필터링 설정 예정
-        related_name='sub_keywords',
+        related_name='sub_keywords', # 메인 키워드에서 자신의 서브 키워드들을 참조할 때 사용
         verbose_name="메인 키워드"
     )
+
+    # 3. keyword_group: 기존대로 group1~group5까지 있으며, client, main_keyword 등에 귀속되지 않습니다.
+    #    default='기본'을 설정하여 값이 주어지지 않을 경우 '기본'으로 저장됩니다.
     keyword_group = models.CharField(
         max_length=50,
         default='기본', # 기본 그룹명 설정
@@ -155,15 +171,23 @@ class ShoppingKeyword(models.Model):
     )
 
     class Meta:
+        # client와 keyword 조합은 유일해야 합니다.
+        # (예: 한 클라이언트가 동일한 이름의 키워드를 두 번 가질 수 없습니다.)
         unique_together = ('client', 'keyword')
         verbose_name = "쇼핑 키워드"
-        # Fix: Change verbose_plural to verbose_name_plural
-        verbose_name_plural = "쇼핑 키워드" 
+        verbose_name_plural = "쇼핑 키워드" # Fix: verbose_name_plural로 수정
 
     def __str__(self):
+        # 이 키워드가 서브 키워드인 경우 (main_keyword가 존재하는 경우)
         if self.main_keyword:
             return f"[{self.client.name}] {self.main_keyword.keyword} > {self.keyword} ({self.keyword_group})"
+        # 이 키워드가 메인 키워드인 경우 (main_keyword가 None인 경우)
         return f"[{self.client.name}] {self.keyword} ({self.keyword_group})"
+
+    # 편의를 위한 속성: 이 키워드가 메인 키워드인지 확인
+    @property
+    def is_main_keyword(self):
+        return self.main_keyword is None
 
 class KeywordClick(models.Model):
     keyword = models.ForeignKey(
