@@ -254,21 +254,21 @@ def shopping_keyword_input(request):
     return render(request, 'blog/shopping_keyword_input.html', context)
 
 
-@login_required
-def shopping_keyword_input(request): # 이 함수는 이제 새로운 메인 키워드를 생성합니다.
-    if request.method == 'POST':
-        form = MainKeywordAddForm(request.POST) # MainKeywordAddForm 사용
-        if form.is_valid():
-            # MainKeywordAddForm의 save 메서드에서 main_keyword = None 처리
-            form.save() 
-            messages.success(request, f"'{form.cleaned_data['keyword']}' 메인 키워드가 성공적으로 추가되었습니다.")
-            return redirect('shopping_keyword_list') 
-        else:
-            messages.error(request, '메인 키워드 추가에 실패했습니다. 입력값을 확인해주세요.')
-    else:
-        form = MainKeywordAddForm() # GET 요청 시 빈 폼 생성
+# @login_required
+# def shopping_keyword_input(request): # 이 함수는 이제 새로운 메인 키워드를 생성합니다.
+#     if request.method == 'POST':
+#         form = MainKeywordAddForm(request.POST) # MainKeywordAddForm 사용
+#         if form.is_valid():
+#             # MainKeywordAddForm의 save 메서드에서 main_keyword = None 처리
+#             form.save() 
+#             messages.success(request, f"'{form.cleaned_data['keyword']}' 메인 키워드가 성공적으로 추가되었습니다.")
+#             return redirect('shopping_keyword_list') 
+#         else:
+#             messages.error(request, '메인 키워드 추가에 실패했습니다. 입력값을 확인해주세요.')
+#     else:
+#         form = MainKeywordAddForm() # GET 요청 시 빈 폼 생성
 
-    return render(request, 'blog/shopping_keyword_input.html', {'form': form})
+#     return render(request, 'blog/shopping_keyword_input.html', {'form': form})
 
 
 @login_required
