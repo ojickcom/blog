@@ -152,32 +152,25 @@ def blog_complete(request, pk):
 @login_required
 def shopping_keyword_list(request):
     # Case와 When을 사용하여 main_keyword가 NULL인 경우를 먼저 정렬하도록 합니다.
-    # main_keyword가 NULL이면 True (또는 1), 아니면 False (또는 0) 값을 할당하여 정렬 순서를 제어합니다.
-    # 여기서는 True (메인 키워드)가 먼저 오도록 할 것이므로, is_main_keyword 필드에 True/False를 할당하고
-    # 이 필드를 내림차순 정렬(-is_main_keyword)하면 True가 먼저 오게 됩니다.
     all_keywords = ShoppingKeyword.objects.select_related('client', 'main_keyword').annotate(
-        # is_main_keyword 필드를 새로 추가하여 main_keyword가 NULL인지 여부를 불리언 값으로 저장
         is_main_keyword=Case(
             When(main_keyword__isnull=True, then=Value(True)),
             default=Value(False),
             output_field=BooleanField()
         )
     ).order_by(
-        'client__name',          # 클라이언트 이름으로 1차 정렬
-        '-is_main_keyword',      # is_main_keyword가 True인 것(메인 키워드)이 먼저 오도록 내림차순 정렬
-        'main_keyword__keyword', # 상위 메인 키워드의 이름으로 정렬 (NULL이 아닌 경우에만 유의미)
-        'keyword'                # 최종적으로 자신의 키워드 이름으로 정렬
+        'client__name',
+        '-is_main_keyword',
+        'main_keyword__keyword',
+        'keyword'
     )
 
     today = date.today()
     date_range = [today - timedelta(days=i) for i in range(7)]
 
     for keyword in all_keywords:
-        # 이 부분은 ClickLog 모델 이름이 ClickLog라고 가정합니다.
-        # 기존 코드에서는 KeywordClick을 사용하고 있어 혼동의 여지가 있습니다.
-        # 모델 정의가 명확하지 않으므로, 둘 중 하나로 통일해야 합니다.
-        # 여기서는 주신 코드에 맞게 ClickLog를 사용했습니다.
-        keyword_clicks = ClickLog.objects.filter(
+        # 🔴 이 부분을 ClickLog -> KeywordClick으로 변경합니다.
+        keyword_clicks = KeywordClick.objects.filter(
             shopping_keyword=keyword,
             click_date__in=date_range
         ).order_by('click_date')
