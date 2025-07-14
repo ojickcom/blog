@@ -1,6 +1,5 @@
 {% extends "base.html" %}
-
-{% block title %}거래처 목록{% endblock %}
+{% load humanize %}  {% block title %}거래처 목록{% endblock %}
 
 {% block content %}
 <h1 class="mb-4">거래처 목록</h1>
@@ -18,8 +17,7 @@
         <tr>
             <td>{{ client.name }}</td>
             <td>{{ client.get_client_type_display }}</td>
-            <td>{{ client.payment_amount }}원</td>
-            <td>
+            <td>{{ client.payment_amount|intcomma }}원</td> <td>
                 {% if client.is_completed %}
                     <span class="badge bg-success">완료</span>
                 {% else %}
@@ -32,14 +30,12 @@
     <tfoot class="table-group-divider">
         <tr>
             <th colspan="2" class="text-end">총 완료 금액:</th>
-            <th class="text-start">{{ completed_sum|default:0 }}원</th>
-            <th></th>
+            <th class="text-start">{{ completed_sum|intcomma|default:0 }}원</th> <th></th>
         </tr>
         <tr>
             <th colspan="2" class="text-end">총 미완료 금액:</th>
-            <th class="text-start">{{ pending_sum|default:0 }}원</th>
-            <th></th>
+            <th class="text-start">{{ pending_sum|intcomma|default:0 }}원</th> <th></th>
         </tr>
     </tfoot>
-    </table>
+</table>
 {% endblock %}
