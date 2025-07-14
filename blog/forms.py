@@ -43,39 +43,63 @@ class BlogForm(forms.ModelForm):
             raise forms.ValidationError('내용은 50자 이상이어야 합니다.')
         return content
 class ShoppingKeywordForm(forms.ModelForm):
-    # main_keyword 필드는 ModelChoiceField로 유지
-    main_keyword = forms.ModelChoiceField(
-        queryset=ShoppingKeyword.objects.all(),
-        required=False,
-        label="메인 키워드",
-        help_text="이 키워드가 종속될 메인 키워드를 선택하세요."
-    )
-    
-    # keyword_group 필드를 CharField로 추가
-    keyword_group = forms.CharField(
-        max_length=50,
-        required=True,
-        initial='기본', # 폼 초기값 설정
-        label="키워드 그룹",
-        help_text="이 키워드가 속할 그룹을 입력하세요 (예: keyword_group1, keyword_group2)"
+    # 키워드 그룹 선택 필드 정의
+    KEYWORD_GROUP_CHOICES = [
+        ('그룹1', '그룹1'),
+        ('그룹2', '그룹2'),
+        ('그룹3', '그룹3'),
+        ('그룹4', '그룹4'),
+        ('그룹5', '그룹5'),
+    ]
+    keyword_group = forms.ChoiceField(
+        choices=KEYWORD_GROUP_CHOICES,
+        label="키워드 그룹"
     )
 
     class Meta:
         model = ShoppingKeyword
-        fields = ['client', 'keyword', 'main_keyword', 'keyword_group'] # is_click_target 제거
+        fields = ['client', 'keyword', 'main_keyword', 'keyword_group']
         labels = {
             'client': '클라이언트',
             'keyword': '키워드',
-            # 'keyword_group' 라벨은 이미 필드 정의에서 설정됨
+            'main_keyword': '메인 키워드 (선택 사항)', # 레이블 변경
+            'keyword_group': '키워드 그룹',
         }
-    
+        widgets = {
+            'keyword': forms.TextInput(attrs={'placeholder': '키워드를 입력하세요'}),
+        }
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if self.instance and self.instance.pk:
-            # 수정 모드일 때 main_keyword 선택지에서 자기 자신을 제외
-            self.fields['main_keyword'].queryset = ShoppingKeyword.objects.exclude(pk=self.instance.pk)
-        else:
-            # 생성 모드일 때 모든 키워드를 main_keyword로 선택 가능
-            self.fields['main_keyword'].queryset = ShoppingKeyword.objects.all()
+        
+        # 1. 클라이언트 필드 제한: client_type이 'shopping'인 클라이언트만 표시
+        self.fields['client'].queryset = Client.objects.filter(client_type='shopping').order_by('name')
 
-        self.fields['client'].queryset = Client.objects.all()
+        # 2. 메인 키워드 필드 설정 (선택 사항으로 만들기)
+        # 이미 null=True, blank=True가 모델에 설정되어 있어 기본적으로 선택 사항입니다.
+        # 드롭다운 옵션에 현재 클라이언트의 키워드만 보이게 하려면 필터링합니다.
+        # 인스턴스가 있다면, 해당 인스턴스의 클라이언트에 속한 키워드만 메인 키워드 후보로 표시
+        if self.instance and self.instance.pk: # 수정 모드일 때
+            self.fields['main_keyword'].queryset = ShoppingKeyword.objects.filter(
+                client=self.instance.client
+            ).exclude(pk=self.instance.pk).order_by('keyword') # 자기 자신은 메인 키워드가 될 수 없음
+        else: # 생성 모드일 때 (클라이언트가 아직 선택되지 않았을 수 있으므로 모든 쇼핑 키워드를 보여줌)
+            self.fields['main_keyword'].queryset = ShoppingKeyword.objects.filter(
+                client__client_type='shopping'
+            ).order_by('keyword')
+            
+        # 선택된 클라이언트가 있을 경우, 메인 키워드 옵션을 해당 클라이언트에 한정
+        # 초기 로드 시 클라이언트가 선택되지 않은 경우를 대비 (JS로 동적 업데이트 권장)
+        client_id = self.initial.get('client') or self.data.get('client')
+        if client_id:
+            self.fields['main_keyword'].queryset = ShoppingKeyword.objects.filter(
+                client_id=client_id,
+                client__client_type='shopping' # 혹시 모르니 다시 한번 필터링
+            ).exclude(pk=self.instance.pk if self.instance else None).order_by('keyword')
+
+        # 메인 키워드 필드가 비어있을 수 있도록 빈 선택지 추가
+        self.fields['main_keyword'].empty_label = "메인 키워드 없음 (선택 사항)"
+        
+        # 3. 키워드 그룹 필드는 ChoiceField로 이미 상단에 정의됨
+        # 기본값을 '기본'이 아닌 첫 번째 옵션('그룹1')으로 설정하려면 initial 값을 줄 수 있습니다.
+        # self.fields['keyword_group'].initial = '그룹1'
