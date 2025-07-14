@@ -10,7 +10,8 @@ from .models import Blog, Client, ContentSubhead, NumberCharacter, TalkStyle, Co
 from .forms import BlogForm, SubKeywordAddForm, MainKeywordNameUpdateForm
 import random
 from datetime import datetime
-from django.contrib import messages 
+from django.contrib import messages
+from django.db import models
 
 # blog_list를 completed와 pending을 함께 보여주는 대시보드 형태로 변경하거나,
 # 두 개의 개별 뷰로 분리할 수 있습니다. 여기서는 두 개의 개별 뷰를 제공합니다.
