@@ -12,6 +12,7 @@ urlpatterns = [
     path('write/', views.blog_write, name='blog_write'),
     path('<int:pk>/', views.blog_detail, name='blog_detail'),
     path('<int:pk>/delete/', views.blog_delete, name='blog_delete'),
+    path('clients/', views.client_list, name='client_list'),
     path('get_random_title_components/', views.get_random_title_components, name='get_random_title_components'),
     path('<int:pk>/complete/', views.blog_complete, name='blog_complete'), # 'mark_blog_as_written'에서 'blog_complete'로 이름 변경
 

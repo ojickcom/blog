@@ -290,3 +290,16 @@ def shopping_keyword_detail(request, pk):
         'keyword': keyword,
         'all_clicks': all_clicks,
     })
+
+@login_required
+def client_list(request):
+    # 데이터베이스에서 모든 Client 객체를 가져옵니다.
+    clients = Client.objects.all()
+    
+    # 템플릿에 전달할 컨텍스트를 정의합니다.
+    context = {
+        'clients': clients
+    }
+    
+    # 'client_list.html' 템플릿을 렌더링하며 데이터를 전달합니다.
+    return render(request, 'blog/client_list.html', context)
