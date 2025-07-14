@@ -2,19 +2,34 @@
 
 {% block title %}{{ list_title }}{% endblock %}
 
-{% block content %}
-
 {% load static %}
+{# CSS 파일을 연결합니다. (기존과 동일) #}
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'blog/style.css' %}">
+{% endblock %}
 
 
+{% block content %}
 <div class="container mt-4">
     <h2 class="mb-4 compact-header">{{ list_title }}</h2>
-<div class="d-flex flex-wrap ms-2 gap-1">
-        <a href="{% url request.resolver_match.url_name %}" class="btn btn-outline-secondary btn-sm {% if not selected_date %}active{% endif %}">전체</a>
+    
+    {# 클라이언트 필터링 버튼들 #}
+    <div class="d-flex flex-wrap ms-2 gap-1 mb-3"> {# mb-3 추가로 아래 내용과 간격 #}
+        {# "전체" 버튼 #}
+        <a href="{% url request.resolver_match.url_name %}" 
+           class="btn btn-outline-secondary btn-sm {% if not selected_client_name %}active{% endif %}">
+            전체
+        </a>
+        {# 각 클라이언트별 버튼 #}
+        {% for client_name in available_clients %}
+            <a href="?client={{ client_name }}" 
+               class="btn btn-outline-primary btn-sm {% if client_name == selected_client_name %}active{% endif %}">
+                {{ client_name }}
+            </a>
+        {% endfor %}
     </div>
 
     {% if blogs %}
-    {# Changed to row-cols-lg-4 for a 4-column layout on large screens, more compact #}
     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-2">
         {% for blog in blogs %}
         <div class="col">
@@ -33,11 +48,12 @@
                                 title="클립보드에 제목 복사">
                             📋 복사
                         </button>
-                    </div>                   
+                    </div>              
                     {# Client, Date and Delete button in one line #}
                     <div class="d-flex align-items-center justify-content-between compact-meta meta-section">
                         <span class="text-muted">
                             {% if blog.client %} <small style="font-size: 0.75rem;">{{ blog.client.name }} | </small>{% endif %}
+                            {# 날짜 표시를 원하시면 여기에 추가: <small style="font-size: 0.75rem;">{{ blog.written_date|date:"Y-m-d" }}</small> #}
                         </span>
                         <form action="{% url 'blog_delete' blog.pk %}" method="post" class="d-inline">
                             {% csrf_token %}

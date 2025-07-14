@@ -18,15 +18,27 @@ from datetime import datetime    # 날짜 처리를 위해 추가
 
 @login_required
 def blog_list_completed(request):
-    """작성 완료된 글 + 날짜 필터링"""
+    """작성 완료된 글 + 클라이언트 필터링"""
+    # URL에서 클라이언트 이름 파라미터 받기
+    selected_client_name = request.GET.get('client')
+
     blogs_query = Blog.objects.filter(blog_write=True).select_related('client')
+    
+    # 선택된 클라이언트가 있다면 해당 클라이언트의 블로그 글만 필터링
+    if selected_client_name:
+        blogs_query = blogs_query.filter(client__name=selected_client_name)
     
     blogs_completed = blogs_query.order_by('-written_date')
 
+    # 모든 클라이언트 이름 목록을 가져오기
+    # `Client` 모델에서 `name` 필드의 고유한 값들을 가져옵니다.
+    available_clients = Client.objects.values_list('name', flat=True).distinct().order_by('name')
 
     return render(request, 'blog/list_completed.html', {
         'blogs': blogs_completed,
         'list_title': '트래픽 용도 글',
+        'available_clients': available_clients, # 추가: 모든 클라이언트 이름 전달
+        'selected_client_name': selected_client_name, # 추가: 현재 선택된 클라이언트 이름 전달
     })
 
 @login_required
