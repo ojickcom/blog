@@ -15,7 +15,6 @@ urlpatterns = [
     path('clients/', views.client_list, name='client_list'),
     path('get_random_title_components/', views.get_random_title_components, name='get_random_title_components'),
     path('<int:pk>/complete/', views.blog_complete, name='blog_complete'), # 'mark_blog_as_written'에서 'blog_complete'로 이름 변경
-    path('shopping_keywords/create_main_keyword/', views.create_main_keyword_ajax, name='create_main_keyword_ajax'),
     path('shopping_keywords/create_sub_keyword_ajax/', views.create_sub_keyword_ajax, name='create_sub_keyword_ajax'),
     path('shopping_keywords/input/', views.shopping_keyword_input, name='shopping_keyword_input'), 
 
