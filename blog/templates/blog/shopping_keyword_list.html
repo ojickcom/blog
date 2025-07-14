@@ -59,7 +59,7 @@
                         </td>
                         <td>
                             <a href="{% url 'shopping_keyword_edit' pk=keyword.pk %}" class="btn btn-sm btn-info compact-btn">수정</a>
-                            <form action="{% url 'shopping_keyword_delete' pk=keyword.pk %}" method="post" style="display:inline;" onsubmit="return confirm('정말로 삭제하시겠mka?');"> {# 오타 수정: '삭제하시겠mka?' -> '삭제하시겠습니까?' #}
+                            <form action="{% url 'shopping_keyword_delete' pk=keyword.pk %}" method="post" style="display:inline;" onsubmit="return confirm('정말로 삭제하시겠습니까?');"> {# 오타 수정: '삭제하시겠mka?' -> '삭제하시겠습니까?' #}
                                 {% csrf_token %}
                                 <button type="submit" class="btn btn-sm btn-danger compact-btn">삭제</button>
                             </form>
@@ -85,29 +85,44 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form id="mainKeywordForm" method="post" action="{% url 'create_main_keyword_ajax' %}">
-    {% csrf_token %}
-    <div class="modal-body">
-        <!-- ✅ 클라이언트 선택 -->
-        <div class="mb-3">
-            <label for="id_client" class="form-label">{{ main_keyword_form.client.label }}</label>
-            {{ main_keyword_form.client }}
-        </div>
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="{{ main_keyword_form.client.id_for_label }}" class="form-label">{{ main_keyword_form.client.label }}</label>
+                        {{ main_keyword_form.client }}
+                        {% if main_keyword_form.client.errors %}
+                            <div class="text-danger small">
+                                {% for error in main_keyword_form.client.errors %}<p class="mb-0">{{ error }}</p>{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
 
-        <!-- ✅ main_keyword 입력 필드 -->
-        <div class="mb-3">
-            <label for="id_main_keyword" class="form-label">{{ main_keyword_form.main_keyword.label }}</label>
-            {{ main_keyword_form.main_keyword }}
-        </div>
+                    <div class="mb-3">
+                        <label for="{{ main_keyword_form.main_keyword.id_for_label }}" class="form-label">{{ main_keyword_form.main_keyword.label }}</label>
+                        {{ main_keyword_form.main_keyword }}
+                        {% if main_keyword_form.main_keyword.errors %}
+                            <div class="text-danger small">
+                                {% for error in main_keyword_form.main_keyword.errors %}<p class="mb-0">{{ error }}</p>{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
 
-        {{ main_keyword_form.keyword_group }} <!-- hidden input 유지 -->
-    </div>
+                    <div class="mb-3">
+                        <label for="{{ main_keyword_form.keyword_group.id_for_label }}" class="form-label">{{ main_keyword_form.keyword_group.label }}</label>
+                        {{ main_keyword_form.keyword_group }}
+                        {% if main_keyword_form.keyword_group.errors %}
+                            <div class="text-danger small">
+                                {% for error in main_keyword_form.keyword_group.errors %}<p class="mb-0">{{ error }}</p>{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
 
-    <!-- ✅ 저장 버튼은 여기에서! -->
-    <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
-        <button type="submit" class="btn btn-primary">저장</button>
-    </div>
-</form>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+                    <button type="submit" class="btn btn-primary">저장</button>
+                </div>
+            </form>
 
         </div>
     </div>
@@ -150,21 +165,26 @@ document.addEventListener('DOMContentLoaded', function() {
                     location.reload(); // 페이지 새로고침하여 목록 업데이트
                 } else {
                     const errors = data.errors;
+                    // 이전 에러 메시지 제거
                     document.querySelectorAll('.text-danger.small').forEach(el => el.remove());
 
                     for (const fieldName in errors) {
                         if (errors.hasOwnProperty(fieldName)) {
                             const fieldErrors = errors[fieldName];
-                            // HiddenInput 필드의 경우 에러를 일반 메시지로 표시
-                            if (fieldName === 'keyword_group') {
-                                alert(`키워드 그룹 오류: ${fieldErrors.join(', ')}`);
-                                continue; 
-                            }
+                            // 🔴 수정 부분: keyword_group이 더 이상 HiddenInput이 아니므로,
+                            // 필드별 에러 처리 로직에 포함시킵니다.
+                            // if (fieldName === 'keyword_group') { // 이 조건문 삭제
+                            //     alert(`키워드 그룹 오류: ${fieldErrors.join(', ')}`);
+                            //     continue; 
+                            // }
+                            
+                            // id_${fieldName}으로 정확한 ID를 사용하도록 변경
                             const inputElement = document.getElementById(`id_${fieldName}`);
                             if (inputElement) {
                                 const errorDiv = document.createElement('div');
                                 errorDiv.className = 'text-danger small';
                                 errorDiv.innerHTML = fieldErrors.map(err => `<p class="mb-0">${err}</p>`).join('');
+                                // 에러 메시지를 해당 inputElement 바로 뒤에 삽입합니다.
                                 inputElement.parentNode.insertBefore(errorDiv, inputElement.nextSibling);
                             }
                         }
