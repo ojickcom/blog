@@ -2,6 +2,14 @@
 
 {% block title %}{{ list_title }}{% endblock %}
 
+{# static 태그를 사용하기 위해 로드 #}
+{% load static %}
+{% block extra_head %}
+{# blog 앱의 static 폴더 안에 있는 style.css 파일을 연결합니다. #}
+<link rel="stylesheet" href="{% static 'blog/style.css' %}">
+{% endblock %}
+
+
 {% block content %}
 <div class="container mt-4">
     <h2 class="mb-4">{{ list_title }}</h2>
@@ -19,8 +27,8 @@
         <div class="col">
             <div class="card h-100 shadow-sm">
                 <div class="card-body">
-                    {# 여기에 스타일을 추가합니다. #}
-                    <h5 class="card-title" style="height: 3em; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+                    {# 인라인 스타일 대신 CSS 클래스를 사용합니다. #}
+                    <h5 class="card-title card-title-two-lines">
                         {{ blog.b_title }}
                     </h5>
                     <p class="card-text text-muted mb-2">
