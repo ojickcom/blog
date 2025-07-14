@@ -7,10 +7,11 @@ from datetime import date
 # 기존 Client 모델 (변경 없음)
 class Client(models.Model):
     CLIENT_TYPES = [
-        ('personal', '개인'),
-        ('corporate', '기업'),
-        ('government', '정부/공공기관'),
-        ('startup', '스타트업'),
+        ('place', '플레이스'),
+        ('shopping', '쇼핑'),
+        ('auto_keyword', '자동완성'),
+        ('web_rank', '네이버 웹문서'),
+        ('google_rank', '구글 순위'),
     ]
     name = models.CharField(max_length=100, unique=True, verbose_name="클라이언트 이름")
     client_type = models.CharField(max_length=20, choices=CLIENT_TYPES, default='personal', verbose_name="클라이언트 유형")
