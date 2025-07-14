@@ -1,10 +1,18 @@
 {% extends 'base.html' %} {# 또는 기존 레이아웃 파일 #}
 {% block title %}쇼핑 키워드 목록{% endblock %}
 
+{% load static %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1 class="h3">쇼핑 키워드 목록</h1>
-    <a href="{% url 'shopping_keyword_input' %}" class="btn btn-primary">새 키워드 추가</a>
+    <div class="btn-group">
+        <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#addMainKeywordModal">
+            <i class="bi bi-plus-circle me-1"></i> 메인 키워드 추가
+        </button>
+        <a href="{% url 'shopping_keyword_input' %}" class="btn btn-primary ms-2">새 키워드 추가</a>
+    </div>
 </div>
 
 <div class="card shadow-sm">
@@ -14,12 +22,12 @@
                 <thead>
                     <tr>
                         <th>클라이언트</th>
-                        <th>메인 키워드</th> {# 메인 키워드 컬럼 추가 #}
+                        <th>메인 키워드</th>
                         <th>키워드</th>
                         {% for d in date_range %}
-                        <th class="text-center">{{ d|date:"m/d" }}</th> {# 날짜별 클릭 횟수 헤더 #}
+                        <th class="text-center">{{ d|date:"m/d" }}</th>
                         {% endfor %}
-                        <th>클릭 대상</th> {# is_click_target 표시 #}
+                        <th>클릭 대상</th>
                         <th>관리</th>
                     </tr>
                 </thead>
@@ -40,7 +48,7 @@
                             </a>
                         </td>
                         {% for count in keyword.daily_clicks_display %}
-                        <td class="text-center">{{ count }}</td> {# 날짜별 클릭 횟수 데이터 #}
+                        <td class="text-center">{{ count }}</td>
                         {% endfor %}
                         <td>
                             {% if keyword.is_click_target %}
@@ -51,7 +59,7 @@
                         </td>
                         <td>
                             <a href="{% url 'shopping_keyword_edit' pk=keyword.pk %}" class="btn btn-sm btn-info compact-btn">수정</a>
-                            <form action="{% url 'shopping_keyword_delete' pk=keyword.pk %}" method="post" style="display:inline;" onsubmit="return confirm('정말로 삭제하시겠습니까?');">
+                            <form action="{% url 'shopping_keyword_delete' pk=keyword.pk %}" method="post" style="display:inline;" onsubmit="return confirm('정말로 삭제하시겠mka?');"> {# 오타 수정: '삭제하시겠mka?' -> '삭제하시겠습니까?' #}
                                 {% csrf_token %}
                                 <button type="submit" class="btn btn-sm btn-danger compact-btn">삭제</button>
                             </form>
@@ -60,7 +68,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-<td colspan="{{ colspan_count }}" class="text-center">등록된 쇼핑 키워드가 없습니다.</td>
+                        <td colspan="{{ colspan_count }}" class="text-center">등록된 쇼핑 키워드가 없습니다.</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -68,4 +76,124 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="addMainKeywordModal" tabindex="-1" aria-labelledby="addMainKeywordModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addMainKeywordModalLabel">새 메인 키워드 추가</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="mainKeywordForm" method="post" action="{% url 'create_main_keyword_ajax' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    {# 클라이언트 선택 #}
+                    <div class="mb-3">
+                        <label for="id_client_main" class="form-label">{{ main_keyword_form.client.label }}</label>
+                        {{ main_keyword_form.client }}
+                        {% if main_keyword_form.client.errors %}
+                            <div class="text-danger small">{{ main_keyword_form.client.errors }}</div>
+                        {% endif %}
+                    </div>
+                    {# 키워드 이름 입력 #}
+                    <div class="mb-3">
+                        <label for="id_keyword_main" class="form-label">{{ main_keyword_form.keyword.label }}</label>
+                        {{ main_keyword_form.keyword }}
+                        {% if main_keyword_form.keyword.errors %}
+                            <div class="text-danger small">{{ main_keyword_form.keyword.errors }}</div>
+                        {% endif %}
+                    </div>
+                    {# 키워드 그룹 (hidden input) - 이제 label 없이 바로 필드만 렌더링 #}
+                    {{ main_keyword_form.keyword_group }} 
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+                    <button type="submit" class="btn btn-primary">저장</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var mainKeywordForm = document.getElementById('mainKeywordForm');
+    if (mainKeywordForm) {
+        mainKeywordForm.addEventListener('submit', function(e) {
+            e.preventDefault(); // 기본 폼 제출 방지
+
+            const formData = new FormData(this); // 폼 데이터 가져오기
+
+            fetch(this.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(errorData => {
+                        throw errorData;
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.status === 'success') {
+                    alert(data.message);
+                    var modal = bootstrap.Modal.getInstance(document.getElementById('addMainKeywordModal'));
+                    if (modal) {
+                        modal.hide();
+                    }
+                    location.reload(); // 페이지 새로고침하여 목록 업데이트
+                } else {
+                    const errors = data.errors;
+                    document.querySelectorAll('.text-danger.small').forEach(el => el.remove());
+
+                    for (const fieldName in errors) {
+                        if (errors.hasOwnProperty(fieldName)) {
+                            const fieldErrors = errors[fieldName];
+                            // HiddenInput 필드의 경우 에러를 일반 메시지로 표시
+                            if (fieldName === 'keyword_group') {
+                                alert(`키워드 그룹 오류: ${fieldErrors.join(', ')}`);
+                                continue; 
+                            }
+                            const inputElement = document.getElementById(`id_${fieldName}_main`);
+                            if (inputElement) {
+                                const errorDiv = document.createElement('div');
+                                errorDiv.className = 'text-danger small';
+                                errorDiv.innerHTML = fieldErrors.map(err => `<p class="mb-0">${err}</p>`).join('');
+                                inputElement.parentNode.insertBefore(errorDiv, inputElement.nextSibling);
+                            }
+                        }
+                    }
+                    alert('메인 키워드 추가 실패: ' + JSON.stringify(errors));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                let errorMessage = '메인 키워드 추가 중 오류가 발생했습니다.';
+                if (error && typeof error === 'object' && error.message) {
+                    errorMessage += ` ${error.message}`;
+                } else if (typeof error === 'string') {
+                    errorMessage += ` ${error}`;
+                }
+                alert(errorMessage);
+            });
+        });
+    }
+
+    var addMainKeywordModal = document.getElementById('addMainKeywordModal');
+    if (addMainKeywordModal) {
+        addMainKeywordModal.addEventListener('hidden.bs.modal', function () {
+            mainKeywordForm.reset();
+            document.querySelectorAll('.text-danger.small').forEach(el => el.remove());
+        });
+    }
+});
+</script>
 {% endblock %}

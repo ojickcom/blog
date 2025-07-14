@@ -8,7 +8,7 @@ from django.db.models import F # 필드 값 업데이트를 위해 F 객체 임�
 from datetime import date, timedelta
 from django.db.models import OuterRef, Subquery, Sum
 from .models import Blog, Client, ContentSubhead, NumberCharacter, TalkStyle, ContentAspect,  ShoppingKeyword, KeywordClick,Expense
-from .forms import BlogForm, ShoppingKeywordForm
+from .forms import BlogForm, ShoppingKeywordForm,  MainShoppingKeywordForm
 import random
 from datetime import datetime    # 날짜 처리를 위해 추가
 
@@ -314,3 +314,16 @@ def client_list(request):
     
     # 'client_list.html' 템플릿을 렌더링하며 데이터를 전달합니다.
     return render(request, 'blog/client_list.html', context)
+@login_required
+@require_POST
+@csrf_exempt
+def create_main_keyword_ajax(request):
+    form = MainShoppingKeywordForm(request.POST)
+    if form.is_valid():
+        main_keyword_obj = form.save(commit=False)
+        main_keyword_obj.main_keyword = None 
+        # form.save() 시 keyword_group은 HiddenInput의 initial 값('기본')으로 저장됩니다.
+        main_keyword_obj.save()
+        return JsonResponse({'status': 'success', 'message': '메인 키워드가 성공적으로 추가되었습니다.'})
+    else:
+        return JsonResponse({'status': 'error', 'errors': form.errors}, status=400)
