@@ -107,6 +107,22 @@ class Blog(models.Model):
             aspect = random.choice(aspect_qs).name if aspect_qs.exists() else "랜덤 대상"
 
             self.title = f"{subhead} {character} {talkstyle} {aspect}"
+        # --- 2. b_title 중복 확인 및 기존 항목 삭제 로직 (새로 추가된 부분) ---
+        if self.b_title: # b_title 값이 있을 때만 중복 검사를 수행합니다.
+            # 현재 저장하려는 객체(self)를 제외하고, b_title이 같은 다른 블로그들을 찾습니다.
+            # self.pk는 객체가 이미 데이터베이스에 저장되어 있으면 ID를 가집니다.
+            existing_duplicates = Blog.objects.filter(b_title=self.b_title)
+            
+            # 만약 현재 객체가 이미 DB에 있는 경우 (즉, 기존 블로그를 수정하는 경우)
+            # 자기 자신은 중복 검사 대상에서 제외해야 합니다.
+            if self.pk:
+                existing_duplicates = existing_duplicates.exclude(pk=self.pk)
+
+            # 중복된 블로그가 발견되면 삭제합니다.
+            if existing_duplicates.exists():
+                print(f"[{timezone.now()}] 중복된 B_제목 '{self.b_title}'을(를) 가진 기존 블로그 {existing_duplicates.count()}개를 삭제합니다.")
+                existing_duplicates.delete()
+        # ------------------------------------------------------------------
             
         super().save(*args, **kwargs)
 
