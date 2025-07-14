@@ -22,13 +22,14 @@
 
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3">쇼핑 키워드 목록</h1>
+            <a href="{% url 'shopping_keyword_click_list' %}" class="btn btn-info ms-2">클릭용 키워드 보기</a>
         <div class="btn-group">
             <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#addSubKeywordModal">
                 <i class="bi bi-plus-circle me-1"></i> 하위 키워드 추가
             </button>
             <a href="{% url 'shopping_keyword_input' %}" class="btn btn-primary ms-2">새 메인 키워드 생성</a>
             {# 여기에 클릭용 바로가기 링크 추가 #}
-            <a href="{% url 'shopping_keyword_click_list' %}" class="btn btn-info ms-2">클릭용 키워드 보기</a>
+
         </div>
     </div>
 
