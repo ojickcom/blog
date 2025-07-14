@@ -4,7 +4,7 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_POST # POST 요청만 허용하도록 데코레이터 임포트
 from django.views.decorators.csrf import csrf_exempt # CSRF 보호를 임시로 비활성화 (개발용, 실제 배포 시에는 CSRF 토큰 사용 권장)
 from django.contrib.auth.decorators import login_required # 로그인 인증 데코레이터 임포트
-from django.db.models import F # 필드 값 업데이트를 위해 F 객체 임포트
+from django.db.models import F, Case, When, Value, BooleanField # Case, When, Value, BooleanField
 from datetime import date, timedelta
 from django.db.models import OuterRef, Subquery, Sum
 from .models import Blog, Client, ContentSubhead, NumberCharacter, TalkStyle, ContentAspect,  ShoppingKeyword, KeywordClick,Expense,ShoppingKeyword, Client
