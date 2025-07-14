@@ -6,10 +6,22 @@ class BlogForm(forms.ModelForm):
         model = Blog
         fields = ['client', 'b_title', 'title', 'content']
         widgets = {
-            'client': forms.Select(attrs={'class': 'form-select'}),
-            'b_title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'B_제목을 입력하세요 (선택 사항)'}),
-            'title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '블로그 제목을 입력하세요 (비워두면 자동 생성)'}),
-            'content': forms.Textarea(attrs={'class': 'form-control', 'rows': 10, 'placeholder': '10자 이상의 내용을 입력하세요'}),
+            'client': forms.Select(attrs={
+                'class': 'form-select',
+            }),
+            'b_title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'B_제목을 입력하세요 (선택 사항)'
+            }),
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '블로그 제목을 입력하세요 (비워두면 자동 생성)'
+            }),
+            'content': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 10,
+                'placeholder': '10자 이상의 내용을 입력하세요'
+            }),
         }
         labels = {
             'client': '클라이언트',
@@ -39,71 +51,51 @@ class ShoppingKeywordForm(forms.ModelForm):
         ('그룹4', '그룹4'),
         ('그룹5', '그룹5'),
     ]
-
-    # 사용자 입력용 텍스트 필드 (실제 ForeignKey와 매핑됨)
-    main_keyword_text = forms.CharField(
-        required=False,
-        label="메인 키워드",
-        widget=forms.TextInput(attrs={'placeholder': '메인 키워드를 입력하세요 (선택사항)'})
-    )
-
     keyword_group = forms.ChoiceField(
         choices=KEYWORD_GROUP_CHOICES,
         label="키워드 그룹"
     )
 
+    # 메인 키워드를 텍스트 필드로 대체
+    main_keyword_text = forms.CharField(
+        required=False,
+        label="메인 키워드 (입력)",
+        widget=forms.TextInput(attrs={'placeholder': '메인 키워드를 입력하세요 (선택사항)'})
+    )
+
     class Meta:
         model = ShoppingKeyword
-        fields = ['client', 'keyword', 'main_keyword', 'main_keyword_text', 'keyword_group']
+        fields = ['client', 'keyword', 'main_keyword_text', 'keyword_group']
         labels = {
             'client': '클라이언트',
             'keyword': '키워드',
-            'main_keyword': '메인 키워드 (숨김)',  # 숨김 처리
+            'main_keyword_text': '메인 키워드',
             'keyword_group': '키워드 그룹',
         }
         widgets = {
             'keyword': forms.TextInput(attrs={'placeholder': '키워드를 입력하세요'}),
-            'main_keyword': forms.HiddenInput(),  # 실제 DB 저장용 hidden 필드
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
         self.fields['client'].queryset = Client.objects.filter(client_type='shopping').order_by('name')
-
-        if self.instance and self.instance.pk:
-            self.fields['main_keyword'].queryset = ShoppingKeyword.objects.filter(
-                client=self.instance.client
-            ).exclude(pk=self.instance.pk).order_by('keyword')
-        else:
-            self.fields['main_keyword'].queryset = ShoppingKeyword.objects.filter(
-                client__client_type='shopping'
-            ).order_by('keyword')
-
-        client_id = self.initial.get('client') or self.data.get('client')
-        if client_id:
-            self.fields['main_keyword'].queryset = ShoppingKeyword.objects.filter(
-                client_id=client_id,
-                client__client_type='shopping'
-            ).exclude(pk=self.instance.pk if self.instance else None).order_by('keyword')
 
     def clean(self):
         cleaned_data = super().clean()
         client = cleaned_data.get('client')
         main_keyword_text = cleaned_data.get('main_keyword_text')
 
-        # 텍스트로 입력한 main_keyword_text → ForeignKey로 변환
         if main_keyword_text:
             try:
                 matched_keyword = ShoppingKeyword.objects.get(
                     client=client,
                     keyword=main_keyword_text
                 )
-                cleaned_data['main_keyword'] = matched_keyword
+                self.instance.main_keyword = matched_keyword
             except ShoppingKeyword.DoesNotExist:
                 raise forms.ValidationError(f"입력한 메인 키워드 '{main_keyword_text}'가 존재하지 않습니다.")
         else:
-            cleaned_data['main_keyword'] = None
+            self.instance.main_keyword = None
 
         return cleaned_data
 
