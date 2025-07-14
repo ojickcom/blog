@@ -103,34 +103,40 @@ class ShoppingKeywordForm(forms.ModelForm):
         # 3. 키워드 그룹 필드는 ChoiceField로 이미 상단에 정의됨
         # 기본값을 '기본'이 아닌 첫 번째 옵션('그룹1')으로 설정하려면 initial 값을 줄 수 있습니다.
         # self.fields['keyword_group'].initial = '그룹1'
-class MainKeywordAddForm(forms.ModelForm):
+class MainShoppingKeywordForm(forms.ModelForm):
+    # keyword_group은 이제 사용자에게 보이지 않고, 기본값이 자동 설정됩니다.
+    # Choices는 더 이상 필요 없으므로 제거합니다.
+
     class Meta:
         model = ShoppingKeyword
-        # client와 keyword만 받습니다. keyword_group은 hidden으로 자동 설정.
-        # main_keyword는 이 폼에서 다루지 않으므로 fields에 포함하지 않습니다.
-        fields = ['client', 'keyword', 'keyword_group'] 
+        # client, keyword, keyword_group만 필요합니다. main_keyword는 null이므로 필요 없습니다.
+        fields = ['client', 'keyword', 'keyword_group']
         labels = {
             'client': '클라이언트',
-            'keyword': '새로운 메인 키워드 이름', # 이 키워드 자체가 메인 키워드가 됩니다.
-            'keyword_group': None, # HiddenInput이므로 레이블 불필요
+            'keyword': '메인 키워드 이름',
+            # keyword_group의 레이블은 HiddenInput이므로 사실상 필요 없지만,
+            # 명시적으로 None으로 설정하여 템플릿 렌더링 시에도 표시되지 않도록 합니다.
+            'keyword_group': None,
         }
         widgets = {
-            'keyword': forms.TextInput(attrs={'placeholder': '새로운 메인 키워드 이름을 입력하세요'}),
-            'keyword_group': forms.HiddenInput(),
+            'keyword': forms.TextInput(attrs={'placeholder': '메인 키워드 이름을 입력하세요'}),
+            'keyword_group': forms.HiddenInput(), # <-- 이 부분을 HiddenInput으로 변경!
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # 클라이언트 필터링
+        
         self.fields['client'].queryset = Client.objects.filter(client_type='shopping').order_by('name')
-        # keyword_group의 기본값 설정
-        self.fields['keyword_group'].initial = '기본'
+        
+        # keyword_group의 기본값을 '기본'으로 설정합니다.
+        # HiddenInput이므로 이 초기값을 설정하는 것이 중요합니다.
+        self.fields['keyword_group'].initial = '기본' # <-- '기본' 값으로 초기화!
 
     def clean_keyword(self):
         keyword = self.cleaned_data['keyword']
         client = self.cleaned_data.get('client')
-        # 메인 키워드는 client-keyword 조합이 유일해야 함 (main_keyword_id=NULL인 경우)
-        if client and ShoppingKeyword.objects.filter(client=client, keyword=keyword, main_keyword__isnull=True).exists():
-            raise forms.ValidationError(f"'{keyword}' 메인 키워드는 이미 이 클라이언트에 존재합니다. 다른 이름을 사용해주세요.")
+        
+        if client and ShoppingKeyword.objects.filter(client=client, keyword=keyword).exists():
+            raise forms.ValidationError(f"'{keyword}' 키워드는 이미 이 클라이언트에 존재합니다. 다른 이름을 사용해주세요.")
         return keyword
 
