@@ -155,13 +155,16 @@ def shopping_keyword_list(request):
     """
     쇼핑 키워드 목록을 보여주는 페이지.
     지난 10일간의 클릭 횟수도 함께 표시.
-    모든 키워드 (그룹 관계없이) 보여준다.
+    Client.client_type이 'shopping'인 키워드만 보여준다.
     """
     today = date.today()
     ten_days_ago = today - timedelta(days=9) # 오늘 포함 10일 전
 
     # 모든 쇼핑 키워드를 가져옵니다.
-    all_keywords = ShoppingKeyword.objects.select_related('client').order_by('client__name', 'keyword')
+    # 변경: client__client_type이 'shopping'인 키워드만 필터링
+    all_keywords = ShoppingKeyword.objects.filter(
+        client__client_type='shopping'
+    ).select_related('client').order_by('client__name', 'keyword')
 
     recent_clicks_data = {}
     date_range = [ten_days_ago + timedelta(days=i) for i in range(10)]
@@ -188,18 +191,22 @@ def shopping_keyword_list(request):
         ]
     
     # colspan_count 계산은 뷰에서 처리하여 템플릿으로 전달
-    colspan_count = 4 + len(date_range) + 1 # 클라이언트, 메인, 키워드, 관리, 클릭 대상 + 날짜 수 + (새로운 '키워드 그룹' 컬럼 추가)
-                                          # 4(클라이언트, 메인, 키워드, 관리) + date_range 길이 + 1(클릭 대상 컬럼) + 1(새로 추가될 그룹 컬럼)
-                                          # 정확히는 컬럼이 (클라이언트, 메인 키워드, 키워드, 날짜들, 키워드 그룹, 관리) 이므로
-                                          # 3 (client, main_keyword, keyword) + len(date_range) + 1 (keyword_group) + 1 (관리)
-                                          # 총 5 + len(date_range)
-    colspan_count = 5 + len(date_range) # 클라이언트, 메인 키워드, 키워드, 키워드 그룹, 관리 + 날짜 수
+    # 컬럼: 클라이언트, 메인 키워드, 키워드, 날짜들, 클릭 대상, 관리
+    colspan_count = 3 + len(date_range) + 1 + 1 # (클라이언트, 메인, 키워드) + 날짜수 + 클릭대상 + 관리
+    # 3 (client, main_keyword, keyword) + len(date_range) + 1 (is_click_target) + 1 (관리)
+    # 총 5 + len(date_range)
+    # 템플릿의 colspan_count에 이미 '키워드 그룹'이 제외되었으므로, 이전 답변과 동일하게 유지됩니다.
+    # 정확히는 컬럼이 (클라이언트, 메인 키워드, 키워드, 날짜들, 클릭 대상, 관리) 이므로
+    # 3 (client, main_keyword, keyword) + len(date_range) + 1 (클릭 대상) + 1 (관리) = 5 + len(date_range)
+    colspan_count = 5 + len(date_range)
+
 
     return render(request, 'blog/shopping_keyword_list.html', {
         'keywords': all_keywords,
         'date_range': date_range,
         'colspan_count': colspan_count, # 계산된 colspan_count 전달
     })
+
 
 @login_required
 def shopping_keyword_input(request, pk=None):
