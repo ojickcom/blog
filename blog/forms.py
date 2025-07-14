@@ -140,29 +140,41 @@ class MainKeywordInitialAddForm(forms.ModelForm):
 
 # 메인 키워드 이름과 그룹을 업데이트하는 폼 (2단계)
 class MainKeywordInitialAddForm(forms.ModelForm):
+    # groups 필드를 ModelMultipleChoiceField로 정의 (CheckboxSelectMultiple 위젯 사용)
+    groups = forms.ModelMultipleChoiceField(
+        queryset=KeywordGroup.objects.all().order_by('name'), # 모든 KeywordGroup 객체를 가져옴
+        widget=forms.CheckboxSelectMultiple(), # 체크박스 형태로 표시
+        required=False, # 필수가 아님
+        label="키워드 그룹" # 폼 필드 레이블
+    )
+
     class Meta:
         model = ShoppingKeyword
-        fields = ['client']
+        # 여기에 'keyword' 필드를 추가해야 합니다.
+        # 또한, main_keyword는 이 폼에서 설정하지 않으므로 포함하지 않습니다.
+        fields = ['client', 'keyword', 'groups'] # <-- 'keyword'와 'groups' 필드를 추가
         labels = {
             'client': '클라이언트',
+            'keyword': '메인 키워드 이름', # 레이블을 명확히 변경
+            'groups': '키워드 그룹',
         }
         widgets = {
-            'client': forms.Select(attrs={'class': 'form-control'}),
+            'client': forms.Select(attrs={'class': 'form-select'}),
+            'keyword': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '새로운 메인 키워드 이름을 입력하세요'}),
+            # groups 필드는 위에서 widget을 직접 지정했으므로 여기에 다시 지정할 필요는 없습니다.
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # 클라이언트 필드의 CSS 클래스를 추가합니다.
         self.fields['client'].queryset = Client.objects.all().order_by('name')
+        self.fields['client'].empty_label = "클라이언트를 선택하세요"
+        self.fields['client'].widget.attrs.update({'class': 'form-control'}) # 모든 클라이언트 필드에 적용
 
-    def save(self, commit=True):
-        instance = super().save(commit=False)
-        instance.main_keyword = None
-        instance.keyword = "" # 초기 생성 시 keyword는 빈 문자열
-        # groups 필드는 ManyToManyField이므로 save_m2m()을 통해 나중에 추가됩니다.
-        # 초기 생성 시에는 기본적으로 아무 그룹에도 속하지 않습니다.
-        if commit:
-            instance.save()
-        return instance
+        # keyword 필드에 초기값이 없고 필수인 경우, placeholder를 추가합니다.
+        # if 'keyword' in self.fields and self.instance.pk is None: # 새로운 인스턴스일 경우
+        #     self.fields['keyword'].widget.attrs.update({'placeholder': '새로운 메인 키워드 이름을 입력하세요'})
+
 class MainKeywordNameUpdateForm(forms.ModelForm):
     # keyword_group 대신 groups 필드를 ModelMultipleChoiceField로 변경
     groups = forms.ModelMultipleChoiceField(
