@@ -48,11 +48,11 @@
 
 /* list_completed.html 관련 스타일 (기존 내용) */
 .compact-card {
-    font-size: 0.75rem;
-    min-height: 60px;
+    font-size: 0.5rem;
+    min-height: 40px;
 }
 .compact-card .card-body {
-    padding: 0.3rem 0.4rem; /* 상하 최소 패딩 */
+    padding: 0.2rem 0.2rem; /* 상하 최소 패딩 */
     gap: 0; /* 내부 간격 제거 */
 }
 .card-body.d-flex.flex-column {
@@ -63,7 +63,7 @@
     margin-bottom: 0.05rem; /* 거의 없앰 */
 }
 .compact-title {
-    font-size: 0.85rem;
+    font-size: 0.6rem;
     line-height: 1;
     margin-bottom: 0;
     white-space: nowrap;
