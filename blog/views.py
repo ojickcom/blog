@@ -235,16 +235,25 @@ def shopping_keyword_input(request):
         form = MainKeywordInitialAddForm(request.POST)
         if form.is_valid():
             try:
-                new_keyword = form.save() # save() 메서드에서 M2M 필드는 처리되지 않음 (초기에는 그룹 없음)
+                new_keyword = form.save()
                 messages.success(request, '새 메인 키워드(클라이언트만 설정)가 성공적으로 생성되었습니다. 이제 키워드 이름과 그룹을 추가할 수 있습니다.')
-                # 생성된 키워드의 수정 페이지로 리다이렉트하여 이름과 그룹을 바로 설정하도록 유도
-                return redirect('shopping_keyword_edit', pk=new_keyword.pk) 
+                return redirect('shopping_keyword_edit', pk=new_keyword.pk)
             except Exception as e:
                 messages.error(request, f'메인 키워드 생성 중 오류가 발생했습니다: {e}')
         else:
+            # --- 이 부분을 수정합니다 ---
+            # 폼 전체 오류 메시지 처리
+            if '__all__' in form.errors:
+                for error in form.errors['__all__']:
+                    messages.error(request, f"폼 오류: {error}") # 필드 레이블 없이 "폼 오류"로 표시
+            
+            # 각 필드별 오류 메시지 처리
             for field, errors in form.errors.items():
-                for error in errors:
-                    messages.error(request, f"{form.fields[field].label}: {error}")
+                if field != '__all__': # '__all__'은 위에서 이미 처리했으므로 건너_ㅂ니다.
+                    field_label = form.fields[field].label if field in form.fields else field # 필드가 없는 경우 필드 이름 자체를 사용
+                    for error in errors:
+                        messages.error(request, f"{field_label}: {error}")
+            # --- 수정 끝 ---
     else:
         form = MainKeywordInitialAddForm()
 
