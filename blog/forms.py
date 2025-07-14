@@ -1,6 +1,6 @@
 # blog/forms.py
 from django import forms
-from .models import Blog, Client, ShoppingKeyword
+from .models import Blog, Client, ShoppingKeyword, KeywordGroup
 from django.forms.widgets import Select # forms.Select 위젯을 직접 임포트
 
 class BlogForm(forms.ModelForm):
