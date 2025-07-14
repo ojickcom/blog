@@ -29,5 +29,17 @@
         </tr>
         {% endfor %}
     </tbody>
-</table>
+    <tfoot class="table-group-divider">
+        <tr>
+            <th colspan="2" class="text-end">총 완료 금액:</th>
+            <th class="text-start">{{ completed_sum|default:0 }}원</th>
+            <th></th>
+        </tr>
+        <tr>
+            <th colspan="2" class="text-end">총 미완료 금액:</th>
+            <th class="text-start">{{ pending_sum|default:0 }}원</th>
+            <th></th>
+        </tr>
+    </tfoot>
+    </table>
 {% endblock %}
