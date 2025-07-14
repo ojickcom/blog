@@ -7,7 +7,7 @@ from django.db.models import F, Case, When, Value, BooleanField # Case, When, Va
 from datetime import date, timedelta
 from django.db.models import OuterRef, Subquery, Sum
 from .models import Blog, Client, ContentSubhead, NumberCharacter, TalkStyle, ContentAspect, ShoppingKeyword, KeywordClick, Expense
-from .forms import BlogForm, SubKeywordAddForm, MainKeywordAddForm
+from .forms import BlogForm, SubKeywordAddForm, MainKeywordNameUpdateForm
 import random
 from datetime import datetime
 from django.contrib import messages 
@@ -151,48 +151,107 @@ def blog_complete(request, pk):
     
 @login_required
 def shopping_keyword_list(request):
-    # Case와 When을 사용하여 main_keyword가 NULL인 경우를 먼저 정렬하도록 합니다.
-    all_keywords = ShoppingKeyword.objects.select_related('client', 'main_keyword').annotate(
-        is_main_keyword=Case(
-            When(main_keyword__isnull=True, then=Value(True)),
-            default=Value(False),
-            output_field=BooleanField()
-        )
-    ).order_by(
+    # groups를 prefetch_related에 추가하여 N+1 쿼리 방지
+    keywords = ShoppingKeyword.objects.select_related('client', 'main_keyword').prefetch_related('sub_keywords', 'clicks', 'groups').order_by(
         'client__name',
-        '-is_main_keyword',
-        'main_keyword__keyword',
+        Case(
+            When(main_keyword__isnull=True, then=Value(0)),
+            default=Value(1),
+            output_field=models.IntegerField()
+        ),
         'keyword'
     )
 
     today = date.today()
     date_range = [today - timedelta(days=i) for i in range(7)]
+    
+    all_clicks = KeywordClick.objects.filter(click_date__in=date_range).values('keyword_id', 'click_date', 'click_count')
+    click_data_map = {}
+    for click in all_clicks:
+        click_data_map[(click['keyword_id'], click['click_date'])] = click['click_count']
 
-    for keyword in all_keywords:
-        # 🔴 이 부분을 수정합니다: shopping_keyword=keyword -> keyword=keyword
-        keyword_clicks = KeywordClick.objects.filter(
-            keyword=keyword, # 또는 keyword_id=keyword.id
-            click_date__in=date_range
-        ).order_by('click_date')
+    for keyword_obj in keywords:
+        keyword_obj.daily_clicks_display = [
+            click_data_map.get((keyword_obj.id, d), 0) for d in date_range
+        ]
+        keyword_obj.is_click_target = True 
 
-        clicks_by_date = {log.click_date: log.click_count for log in keyword_clicks}
-
-        daily_clicks_display = []
-        for d in date_range:
-            daily_clicks_display.append(clicks_by_date.get(d, 0))
-        keyword.daily_clicks_display = daily_clicks_display
-
-    colspan_count = 5 + len(date_range)
-
+    # SubKeywordAddForm의 main_keyword 선택지를 정확히 필터링합니다.
     sub_keyword_add_form = SubKeywordAddForm()
+    sub_keyword_add_form.fields['main_keyword'].queryset = ShoppingKeyword.objects.filter(main_keyword__isnull=True).exclude(keyword='').order_by('keyword')
 
     context = {
-        'keywords': all_keywords,
+        'keywords': keywords,
         'date_range': date_range,
-        'colspan_count': colspan_count,
+        'colspan_count': 6 + len(date_range),
         'sub_keyword_add_form': sub_keyword_add_form,
     }
     return render(request, 'blog/shopping_keyword_list.html', context)
+@login_required
+def shopping_keyword_edit(request, pk):
+    keyword = get_object_or_404(ShoppingKeyword, pk=pk)
+
+    if request.method == 'POST':
+        # MainKeywordNameUpdateForm은 keyword와 groups만 수정합니다.
+        form = MainKeywordNameUpdateForm(request.POST, instance=keyword)
+        if form.is_valid():
+            form.save() # 폼의 save() 메서드 내부에서 save_m2m()이 호출됩니다.
+            messages.success(request, '키워드 이름과 그룹이 성공적으로 업데이트되었습니다.')
+            return redirect('shopping_keyword_list')
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{form.fields[field].label}: {error}")
+    else:
+        form = MainKeywordNameUpdateForm(instance=keyword)
+
+    context = {
+        'form': form,
+        'keyword': keyword,
+    }
+    return render(request, 'blog/shopping_keyword_edit.html', context)
+
+
+# --- AJAX를 통한 서브 키워드 생성 뷰 ---
+@login_required
+def create_sub_keyword_ajax(request):
+    if request.method == 'POST':
+        form = SubKeywordAddForm(request.POST)
+        if form.is_valid():
+            try:
+                sub_keyword = form.save() # 폼의 save() 메서드 내부에서 save_m2m()이 호출됩니다.
+                return JsonResponse({'status': 'success', 'message': '하위 키워드가 성공적으로 추가되었습니다.'})
+            except Exception as e:
+                return JsonResponse({'status': 'error', 'message': f'하위 키워드 추가 실패: {e}'}, status=400)
+        else:
+            errors = form.errors.as_json()
+            return JsonResponse({'status': 'error', 'message': '입력값을 확인해주세요.', 'errors': errors}, status=400)
+    return JsonResponse({'status': 'error', 'message': '유효하지 않은 요청입니다.'}, status=405)
+
+@login_required
+def shopping_keyword_input(request):
+    if request.method == 'POST':
+        form = MainKeywordInitialAddForm(request.POST)
+        if form.is_valid():
+            try:
+                new_keyword = form.save() # save() 메서드에서 M2M 필드는 처리되지 않음 (초기에는 그룹 없음)
+                messages.success(request, '새 메인 키워드(클라이언트만 설정)가 성공적으로 생성되었습니다. 이제 키워드 이름과 그룹을 추가할 수 있습니다.')
+                # 생성된 키워드의 수정 페이지로 리다이렉트하여 이름과 그룹을 바로 설정하도록 유도
+                return redirect('shopping_keyword_edit', pk=new_keyword.pk) 
+            except Exception as e:
+                messages.error(request, f'메인 키워드 생성 중 오류가 발생했습니다: {e}')
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{form.fields[field].label}: {error}")
+    else:
+        form = MainKeywordInitialAddForm()
+
+    context = {
+        'form': form,
+    }
+    return render(request, 'blog/shopping_keyword_input.html', context)
+
 
 @login_required
 def shopping_keyword_input(request): # 이 함수는 이제 새로운 메인 키워드를 생성합니다.

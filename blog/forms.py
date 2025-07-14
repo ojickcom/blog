@@ -104,54 +104,127 @@ class SubKeywordAddForm(forms.ModelForm):
 
 # MainKeywordAddForm: 완전히 새로운 메인 키워드 생성 (페이지 이동용)
 # 이 폼은 keyword 필드에 새로운 메인 키워드 이름을 입력받고, main_keyword 필드는 NULL로 저장됩니다.
-class MainKeywordAddForm(forms.ModelForm):
-    KEYWORD_GROUP_CHOICES = [
-        ('그룹1', '그룹1'),
-        ('그룹2', '그룹2'),
-        ('그룹3', '그룹3'),
-        ('그룹4', '그룹4'),
-        ('그룹5', '그룹5'),
-        ('기본', '기본'), # '기본' 옵션 추가
-    ]
-    keyword_group = forms.ChoiceField(
-        choices=KEYWORD_GROUP_CHOICES,
-        label="키워드 그룹",
-        widget=Select(attrs={'class': 'form-select'}) # forms.Select 대신 Select 사용
-    )
-
+KEYWORD_GROUP_CHOICES = [
+    ('그룹1', '그룹1'),
+    ('그룹2', '그룹2'),
+    ('그룹3', '그룹3'),
+    ('그룹4', '그룹4'),
+    ('그룹5', '그룹5'),
+    ('기타', '기타'), # 기타 그룹 추가
+]
+class MainKeywordInitialAddForm(forms.ModelForm):
     class Meta:
         model = ShoppingKeyword
-        # 여기서는 'keyword' 필드에 메인 키워드 이름을 입력받습니다.
-        # 'main_keyword' 필드는 이 폼에서 사용하지 않습니다 (None으로 저장될 것이기 때문에).
-        fields = ['client', 'keyword', 'keyword_group'] 
+        # 초기 메인 키워드 생성 시에는 client만 받습니다.
+        # keyword와 keyword_group은 나중에 별도의 단계에서 추가됩니다.
+        fields = ['client']
         labels = {
             'client': '클라이언트',
-            'keyword': '새로운 메인 키워드 이름', # 레이블을 명확히 변경
-            'keyword_group': '키워드 그룹',
         }
         widgets = {
-            'client': Select(attrs={'class': 'form-select'}), # forms.Select 대신 Select 사용
-            'keyword': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '새로운 메인 키워드 이름을 입력하세요'}),
+            'client': forms.Select(attrs={'class': 'form-control'}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['client'].queryset = Client.objects.filter(client_type='shopping').order_by('name')
-        self.fields['client'].empty_label = "--- 클라이언트를 선택하세요 ---"
-        # self.fields['keyword_group'].initial = '기본' # 이제 필요 없습니다.
-
-    def clean_keyword(self): # main_keyword 대신 keyword 필드에 대한 유효성 검사
-        keyword = self.cleaned_data['keyword']
-        client = self.cleaned_data.get('client')
-        # 새로운 메인 키워드는 client-keyword 조합이 유일해야 함 (main_keyword가 NULL인 경우)
-        if client and ShoppingKeyword.objects.filter(client=client, keyword=keyword, main_keyword__isnull=True).exists():
-            raise forms.ValidationError(f"'{keyword}' 메인 키워드는 이미 이 클라이언트에 존재합니다. 다른 이름을 사용해주세요.")
-        return keyword
+        self.fields['client'].queryset = Client.objects.all().order_by('name')
 
     def save(self, commit=True):
         instance = super().save(commit=False)
-        # 새로운 메인 키워드이므로 main_keyword 필드는 항상 NULL로 설정
-        instance.main_keyword = None 
+        instance.main_keyword = None  # 새 메인 키워드는 main_keyword가 None
+        instance.keyword = "" # 초기 생성 시 keyword는 빈 문자열로 설정
+        instance.keyword_group = "미지정" # 초기 생성 시 group은 '미지정'으로 설정
         if commit:
             instance.save()
+        return instance
+
+# 메인 키워드 이름과 그룹을 업데이트하는 폼 (2단계)
+class MainKeywordInitialAddForm(forms.ModelForm):
+    class Meta:
+        model = ShoppingKeyword
+        fields = ['client']
+        labels = {
+            'client': '클라이언트',
+        }
+        widgets = {
+            'client': forms.Select(attrs={'class': 'form-control'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['client'].queryset = Client.objects.all().order_by('name')
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        instance.main_keyword = None
+        instance.keyword = "" # 초기 생성 시 keyword는 빈 문자열
+        # groups 필드는 ManyToManyField이므로 save_m2m()을 통해 나중에 추가됩니다.
+        # 초기 생성 시에는 기본적으로 아무 그룹에도 속하지 않습니다.
+        if commit:
+            instance.save()
+        return instance
+class MainKeywordNameUpdateForm(forms.ModelForm):
+    # keyword_group 대신 groups 필드를 ModelMultipleChoiceField로 변경
+    groups = forms.ModelMultipleChoiceField(
+        queryset=KeywordGroup.objects.all().order_by('name'), # 모든 KeywordGroup 객체를 선택지로 제공
+        widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'}), # 다중 선택을 위한 체크박스 위젯
+        required=False, # 그룹 선택은 필수가 아님
+        label="키워드 그룹"
+    )
+
+    class Meta:
+        model = ShoppingKeyword
+        # fields = ['keyword', 'keyword_group'] 대신 'groups' 사용
+        fields = ['keyword', 'groups']
+        labels = {
+            'keyword': '메인 키워드 이름',
+            'groups': '키워드 그룹',
+        }
+        widgets = {
+            'keyword': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '메인 키워드 이름을 입력하세요'}),
+        }
+
+    # ManyToManyField는 save()만으로는 저장되지 않으므로 save_m2m()을 호출해야 함
+    def save(self, commit=True):
+        instance = super().save(commit)
+        # 폼 데이터에서 groups 필드에 대한 변경사항을 인스턴스에 적용 (ManyToManyField용)
+        if commit:
+            self.save_m2m() # ManyToManyField 저장을 위해 필요
+        return instance
+
+
+# 하위 키워드 추가 폼
+class SubKeywordAddForm(forms.ModelForm):
+    # keyword_group 대신 groups 필드를 ModelMultipleChoiceField로 변경
+    groups = forms.ModelMultipleChoiceField(
+        queryset=KeywordGroup.objects.all().order_by('name'), # 모든 KeywordGroup 객체를 선택지로 제공
+        widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'}), # 다중 선택을 위한 체크박스 위젯
+        required=False, # 그룹 선택은 필수가 아님
+        label="키워드 그룹 (선택)"
+    )
+    class Meta:
+        model = ShoppingKeyword
+        # fields = ['client', 'main_keyword', 'keyword', 'keyword_group'] 대신 'groups' 사용
+        fields = ['client', 'main_keyword', 'keyword', 'groups']
+        labels = {
+            'client': '클라이언트',
+            'main_keyword': '상위 메인 키워드',
+            'keyword': '서브 키워드',
+            'groups': '키워드 그룹',
+        }
+        widgets = {
+            'client': forms.Select(attrs={'class': 'form-control'}),
+            'main_keyword': forms.Select(attrs={'class': 'form-control'}),
+            'keyword': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '서브 키워드를 입력하세요'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # main_keyword 선택지를 메인 키워드만 보여주도록 필터링
+        self.fields['main_keyword'].queryset = ShoppingKeyword.objects.filter(main_keyword__isnull=True).exclude(keyword='').order_by('keyword')
+        
+    def save(self, commit=True):
+        instance = super().save(commit)
+        if commit:
+            self.save_m2m() # ManyToManyField 저장을 위해 필요
         return instance

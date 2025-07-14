@@ -1,0 +1,69 @@
+{# blog/templates/blog/shopping_keyword_edit.html #}
+{% extends 'base.html' %} 
+
+{% block title %}{{ keyword.keyword|default:"새 키워드" }} 수정{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">키워드 정보 수정: {{ keyword.keyword|default:"이름 없음" }}</h2>
+
+    {% if messages %}
+    <div class="messages mb-3">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label class="form-label">클라이언트:</label>
+                    <input type="text" class="form-control" value="{{ keyword.client.name }}" disabled>
+                </div>
+                {% if keyword.main_keyword %}
+                <div class="mb-3">
+                    <label class="form-label">상위 메인 키워드:</label>
+                    <input type="text" class="form-control" value="{{ keyword.main_keyword.keyword }}" disabled>
+                </div>
+                {% endif %}
+
+                <div class="mb-3">
+                    <label for="{{ form.keyword.id_for_label }}" class="form-label">{{ form.keyword.label }}</label>
+                    {{ form.keyword }}
+                    {% if form.keyword.errors %}
+                        <div class="text-danger small">
+                            {% for error in form.keyword.errors %}<p class="mb-0">{{ error }}</p>{% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                {# keyword_group 대신 groups 필드 #}
+                <div class="mb-3">
+                    <label class="form-label">{{ form.groups.label }}</label>
+                    {# ModelMultipleChoiceField는 체크박스 목록으로 렌더링되므로 직접 순회 #}
+                    {% for checkbox in form.groups %}
+                        <div class="form-check form-check-inline">
+                            {{ checkbox.tag }}
+                            <label class="form-check-label" for="{{ checkbox.id_for_label }}">{{ checkbox.choice_label }}</label>
+                        </div>
+                    {% endfor %}
+                    {% if form.groups.errors %}
+                        <div class="text-danger small">
+                            {% for error in form.groups.errors %}<p class="mb-0">{{ error }}</p>{% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <button type="submit" class="btn btn-primary mt-3">저장</button>
+                <a href="{% url 'shopping_keyword_list' %}" class="btn btn-secondary mt-3 ms-2">목록으로 돌아가기</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

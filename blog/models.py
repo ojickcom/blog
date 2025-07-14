@@ -131,62 +131,63 @@ class Blog(models.Model):
         ordering = ['-written_date']
         verbose_name = "블로그 게시물"
         verbose_name_plural = "블로그 게시물"
+
+class KeywordGroup(models.Model):
+    name = models.CharField(max_length=50, unique=True, verbose_name="그룹명")
+    description = models.TextField(blank=True, verbose_name="설명")
+
+    class Meta:
+        verbose_name = "키워드 그룹"
+        verbose_name_plural = "키워드 그룹"
+        ordering = ['name'] # 그룹명을 알파벳 순으로 정렬
+
+    def __str__(self):
+        return self.name
+    
 class ShoppingKeyword(models.Model):
-    # 1. client는 Client 모델을 참조하며, 'shopping' 또는 '쇼핑'과 같은 특정 값에 귀속됩니다.
-    #    이는 모델 필드 자체에서 강제하기보다는, 데이터 입력 또는 폼에서 제어하는 것이 일반적입니다.
-    #    여기서는 단순히 Client 모델을 ForeignKey로 참조합니다.
     client = models.ForeignKey(
         'Client',
         on_delete=models.CASCADE,
         related_name='shopping_keywords',
         verbose_name="클라이언트"
     )
-
-    # 4. keyword는 main_keyword에 귀속됩니다.
-    #    이 필드는 키워드 자체의 문자열을 저장합니다.
     keyword = models.CharField(max_length=255, verbose_name="키워드")
-
-    # 2. main_keyword: client에 귀속됩니다.
-    #    'self' 참조는 이 키워드가 다른 ShoppingKeyword 객체(메인 키워드)의 서브 키워드임을 나타냅니다.
-    #    main_keyword가 NULL이면 이 객체 자체가 메인 키워드입니다.
-    #    on_delete=models.SET_NULL: 메인 키워드가 삭제되면 서브 키워드의 main_keyword 필드를 NULL로 설정합니다.
-    #    blank=True, null=True: 이 필드는 선택 사항입니다 (메인 키워드인 경우).
-    #    limit_choices_to=models.Q(): 이 부분은 admin.py에서 상세 필터링을 설정할 것임을 나타냅니다.
     main_keyword = models.ForeignKey(
         'self',
         on_delete=models.SET_NULL,
         blank=True,
         null=True,
-        limit_choices_to=models.Q(),  # admin.py에서 필터링 설정 예정
-        related_name='sub_keywords', # 메인 키워드에서 자신의 서브 키워드들을 참조할 때 사용
+        limit_choices_to=models.Q(),
+        related_name='sub_keywords',
         verbose_name="메인 키워드"
     )
-
-    # 3. keyword_group: 기존대로 group1~group5까지 있으며, client, main_keyword 등에 귀속되지 않습니다.
-    #    default='기본'을 설정하여 값이 주어지지 않을 경우 '기본'으로 저장됩니다.
-    keyword_group = models.CharField(
-        max_length=50,
-        default='기본', # 기본 그룹명 설정
+    # 기존 CharField 'keyword_group'을 ManyToManyField 'groups'로 변경
+    groups = models.ManyToManyField(
+        'KeywordGroup',
+        blank=True, # 키워드가 아무 그룹에도 속하지 않을 수 있음
+        related_name='shopping_keywords', # KeywordGroup에서 해당 그룹에 속한 키워드들을 가져올 때 사용
         verbose_name="키워드 그룹"
     )
 
     class Meta:
-        # client와 keyword 조합은 유일해야 합니다.
-        # (예: 한 클라이언트가 동일한 이름의 키워드를 두 번 가질 수 없습니다.)
-        unique_together = ('client', 'keyword')
+        # unique_together는 이제 (client, keyword)로 유지됩니다.
+        # 동일한 클라이언트가 동일한 키워드를 두 번 가질 수 없습니다.
+        unique_together = ('client', 'keyword') 
         verbose_name = "쇼핑 키워드"
-        verbose_name_plural = "쇼핑 키워드" # Fix: verbose_name_plural로 수정
+        verbose_name_plural = "쇼핑 키워드" 
 
     def __str__(self):
-        # 이 키워드가 서브 키워드인 경우 (main_keyword가 존재하는 경우)
-        if self.main_keyword:
-            return f"[{self.client.name}] {self.main_keyword.keyword} > {self.keyword} ({self.keyword_group})"
-        # 이 키워드가 메인 키워드인 경우 (main_keyword가 None인 경우)
-        return f"[{self.client.name}] {self.keyword} ({self.keyword_group})"
+        # 여러 그룹이 있을 수 있으므로 그룹 이름을 쉼표로 연결하여 표시
+        group_names = ", ".join([g.name for g in self.groups.all()])
+        group_display = f" ({group_names})" if group_names else ""
 
-    # 편의를 위한 속성: 이 키워드가 메인 키워드인지 확인
+        if self.main_keyword and self.main_keyword.keyword:
+            return f"[{self.client.name}] {self.main_keyword.keyword} > {self.keyword}{group_display}"
+        return f"[{self.client.name}] {self.keyword}{group_display}"
+
     @property
     def is_main_keyword(self):
+        # main_keyword 필드가 None이면 메인 키워드
         return self.main_keyword is None
 
 class KeywordClick(models.Model):

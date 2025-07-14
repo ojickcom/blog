@@ -7,93 +7,115 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h3">쇼핑 키워드 목록</h1>
-    <div class="btn-group">
-        {# "메인 키워드 추가" 버튼: 이제 "메인 키워드에 하위 키워드 추가" 역할을 합니다. #}
-        <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#addSubKeywordModal">
-            <i class="bi bi-plus-circle me-1"></i> 메인 키워드에 하위 키워드 추가
-        </button>
-        {# "새 키워드 추가" 버튼: 이제 "새 메인 키워드 생성" 역할을 합니다. #}
-        <a href="{% url 'shopping_keyword_input' %}" class="btn btn-primary ms-2">새 메인 키워드 생성</a>
+<div class="container mt-4">
+    {# 메시지 표시 영역 #}
+    {% if messages %}
+    <div class="messages mb-3">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
     </div>
-</div>
+    {% endif %}
 
-<div class="card shadow-sm">
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table table-hover mb-0">
-                <thead>
-                    <tr>
-                        <th>클라이언트</th>
-                        <th>메인 키워드</th>
-                        <th>키워드</th>
-                        {% for d in date_range %}
-                        <th class="text-center">{{ d|date:"m/d" }}</th>
-                        {% endfor %}
-                        <th>클릭 대상</th>
-                        <th>관리</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for keyword in keywords %}
-                    <tr>
-                        <td>{{ keyword.client.name }}</td>
-                        <td>
-                            {% if keyword.main_keyword %} {# main_keyword_id가 있다면 그 키워드의 keyword 필드를 표시 #}
-                                {{ keyword.main_keyword.keyword }}
-                            {% else %} {# main_keyword_id가 NULL이면 메인 키워드이므로 '-' 표시 #}
-                                -
-                            {% endif %}
-                        </td>
-                        <td>
-                            <a href="{% url 'shopping_keyword_detail' pk=keyword.pk %}">
-                                {{ keyword.keyword }} {# 현재 keyword 객체의 keyword 필드 표시 #}
-                            </a>
-                        </td>
-                        {% for count in keyword.daily_clicks_display %}
-                        <td class="text-center">{{ count }}</td>
-                        {% endfor %}
-                        <td>
-                            {% if keyword.is_click_target %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">쇼핑 키워드 목록</h1>
+        <div class="btn-group">
+            <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#addSubKeywordModal">
+                <i class="bi bi-plus-circle me-1"></i> 하위 키워드 추가
+            </button>
+            <a href="{% url 'shopping_keyword_input' %}" class="btn btn-primary ms-2">새 메인 키워드 생성</a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col">클라이언트</th>
+                            <th scope="col">메인 키워드</th>
+                            <th scope="col">키워드</th>
+                            <th scope="col">키워드 그룹</th> {# 컬럼명 추가 #}
+                            {% for d in date_range %}
+                            <th scope="col" class="text-center">{{ d|date:"m/d" }}</th>
+                            {% endfor %}
+                            <th scope="col">클릭 대상</th>
+                            <th scope="col">관리</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for keyword in keywords %}
+                        <tr {% if keyword.is_main_keyword %}class="table-primary"{% endif %}>
+                            <td>{{ keyword.client.name }}</td>
+                            <td>
+                                {% if keyword.main_keyword %}
+                                    {{ keyword.main_keyword.keyword }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if keyword.main_keyword %}
+                                <span style="padding-left: 20px;">└─ </span>
+                                {% endif %}
+                                <a href="{% url 'shopping_keyword_detail' pk=keyword.pk %}">
+                                    {{ keyword.keyword }}
+                                </a>
+                            </td>
+                            <td>
+                                {# groups 필드를 순회하며 출력 #}
+                                {% for group in keyword.groups.all %}
+                                    <span class="badge bg-info text-dark me-1">{{ group.name }}</span>
+                                {% empty %}
+                                    <span class="badge bg-secondary">미지정</span>
+                                {% endfor %}
+                            </td>
+                            {% for count in keyword.daily_clicks_display %}
+                            <td class="text-center">{{ count }}</td>
+                            {% endfor %}
+                            <td>
+                                {% if keyword.is_click_target %}
                                 <span class="badge bg-success">Y</span>
-                            {% else %}
+                                {% else %}
                                 <span class="badge bg-secondary">N</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <a href="{% url 'shopping_keyword_edit' pk=keyword.pk %}" class="btn btn-sm btn-info compact-btn">수정</a>
-                            <form action="{% url 'shopping_keyword_delete' pk=keyword.pk %}" method="post" style="display:inline;" onsubmit="return confirm('정말로 삭제하시겠습니까?');">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-sm btn-danger compact-btn">삭제</button>
-                            </form>
-                            <a href="{% url 'shopping_keyword_click' %}" class="btn btn-sm btn-success compact-btn">클릭용 바로가기</a>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="{{ colspan_count }}" class="text-center">등록된 쇼핑 키워드가 없습니다.</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'shopping_keyword_edit' pk=keyword.pk %}" class="btn btn-sm btn-info compact-btn">수정</a>
+                                <form action="{% url 'shopping_keyword_delete' pk=keyword.pk %}" method="post" style="display:inline;" onsubmit="return confirm('정말로 삭제하시겠습니까?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-danger compact-btn">삭제</button>
+                                </form>
+                                <a href="{% url 'shopping_keyword_click' %}" class="btn btn-sm btn-success compact-btn">클릭용 바로가기</a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="{{ colspan_count }}" class="text-center">등록된 쇼핑 키워드가 없습니다.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
 
-{# 하위 키워드 추가 모달 (새로운 이름: addSubKeywordModal) #}
+{# 하위 키워드 추가 모달 #}
 <div class="modal fade" id="addSubKeywordModal" tabindex="-1" aria-labelledby="addSubKeywordModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="addSubKeywordModalLabel">메인 키워드에 하위 키워드 추가</h5>
+                <h5 class="modal-title" id="addSubKeywordModalLabel">하위 키워드 추가</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            {# 폼 액션과 ID를 SubKeywordAddForm에 맞게 수정 #}
             <form id="subKeywordAddForm" method="post" action="{% url 'create_sub_keyword_ajax' %}">
                 {% csrf_token %}
                 <div class="modal-body">
-                    {# 클라이언트 선택 #}
                     <div class="mb-3">
                         <label for="{{ sub_keyword_add_form.client.id_for_label }}" class="form-label">{{ sub_keyword_add_form.client.label }}</label>
                         {{ sub_keyword_add_form.client }}
@@ -103,7 +125,6 @@
                             </div>
                         {% endif %}
                     </div>
-                    {# 상위 메인 키워드 선택 (ModelChoiceField) #}
                     <div class="mb-3">
                         <label for="{{ sub_keyword_add_form.main_keyword.id_for_label }}" class="form-label">{{ sub_keyword_add_form.main_keyword.label }}</label>
                         {{ sub_keyword_add_form.main_keyword }}
@@ -113,7 +134,6 @@
                             </div>
                         {% endif %}
                     </div>
-                    {# 하위 키워드 이름 입력 #}
                     <div class="mb-3">
                         <label for="{{ sub_keyword_add_form.keyword.id_for_label }}" class="form-label">{{ sub_keyword_add_form.keyword.label }}</label>
                         {{ sub_keyword_add_form.keyword }}
@@ -123,13 +143,18 @@
                             </div>
                         {% endif %}
                     </div>
-                    {# 키워드 그룹 (ChoiceField) #}
+                    {# keyword_group 대신 groups 필드 #}
                     <div class="mb-3">
-                        <label for="{{ sub_keyword_add_form.keyword_group.id_for_label }}" class="form-label">{{ sub_keyword_add_form.keyword_group.label }}</label>
-                        {{ sub_keyword_add_form.keyword_group }}
-                        {% if sub_keyword_add_form.keyword_group.errors %}
+                        <label class="form-label">{{ sub_keyword_add_form.groups.label }}</label>
+                        {% for radio in sub_keyword_add_form.groups %}
+                            <div class="form-check form-check-inline">
+                                {{ radio.tag }}
+                                <label class="form-check-label" for="{{ radio.id_for_label }}">{{ radio.choice_label }}</label>
+                            </div>
+                        {% endfor %}
+                        {% if sub_keyword_add_form.groups.errors %}
                             <div class="text-danger small">
-                                {% for error in sub_keyword_add_form.keyword_group.errors %}<p class="mb-0">{{ error }}</p>{% endfor %}
+                                {% for error in sub_keyword_add_form.groups.errors %}<p class="mb-0">{{ error }}</p>{% endfor %}
                             </div>
                         {% endif %}
                     </div>
@@ -148,13 +173,12 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // 폼 ID와 모달 ID를 'mainKeywordForm'에서 'subKeywordAddForm'으로 변경
     var subKeywordAddForm = document.getElementById('subKeywordAddForm');
     if (subKeywordAddForm) {
         subKeywordAddForm.addEventListener('submit', function(e) {
-            e.preventDefault(); // 기본 폼 제출 방지
+            e.preventDefault();
 
-            const formData = new FormData(this); // 폼 데이터 가져오기
+            const formData = new FormData(this);
 
             fetch(this.action, {
                 method: 'POST',
@@ -174,37 +198,35 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(data => {
                 if (data.status === 'success') {
                     alert(data.message);
-                    // 모달 ID를 'addMainKeywordModal'에서 'addSubKeywordModal'로 변경
                     var modal = bootstrap.Modal.getInstance(document.getElementById('addSubKeywordModal'));
                     if (modal) {
                         modal.hide();
                     }
-                    location.reload(); // 페이지 새로고침하여 목록 업데이트
+                    location.reload();
                 } else {
-                    const errors = data.errors;
-                    // 이전 에러 메시지 제거
+                    const errors = JSON.parse(data.errors);
                     document.querySelectorAll('.text-danger.small').forEach(el => el.remove());
 
                     for (const fieldName in errors) {
                         if (errors.hasOwnProperty(fieldName)) {
                             const fieldErrors = errors[fieldName];
-                            // 이제 모든 필드가 사용자에게 보이는 필드이므로, 별도 HiddenInput 처리는 필요 없음.
-                            // fieldName에 따라 올바른 ID를 가진 요소를 찾도록 수정
-                            const inputElement = document.getElementById(`id_${fieldName}`); // id_client, id_main_keyword, id_keyword, id_keyword_group
-                            if (inputElement) {
+                            // CheckboxSelectMultiple의 경우, inputElement가 아닐 수 있으므로 부모 요소를 찾아야 함.
+                            const formFieldContainer = document.querySelector(`label[for="id_${fieldName}_0"]`) ? document.querySelector(`label[for="id_${fieldName}_0"]`).closest('.mb-3') : document.getElementById(`id_${fieldName}`) ? document.getElementById(`id_${fieldName}`).closest('.mb-3') : null;
+
+                            if (formFieldContainer) {
                                 const errorDiv = document.createElement('div');
                                 errorDiv.className = 'text-danger small';
-                                errorDiv.innerHTML = fieldErrors.map(err => `<p class="mb-0">${err}</p>`).join('');
-                                inputElement.parentNode.insertBefore(errorDiv, inputElement.nextSibling);
+                                errorDiv.innerHTML = fieldErrors.map(err => `<p class="mb-0">${err.message}</p>`).join('');
+                                formFieldContainer.appendChild(errorDiv); // 에러 메시지를 컨테이너에 추가
                             }
                         }
                     }
-                    alert('하위 키워드 추가 실패: ' + JSON.stringify(errors)); // 메시지 변경
+                    alert('하위 키워드 추가 실패: ' + data.message);
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                let errorMessage = '하위 키워드 추가 중 오류가 발생했습니다.';
+                let errorMessage = '하위 키워드 추가 중 예상치 못한 오류가 발생했습니다.';
                 if (error && typeof error === 'object' && error.message) {
                     errorMessage += ` ${error.message}`;
                 } else if (typeof error === 'string') {
@@ -215,7 +237,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // 모달 ID를 'addMainKeywordModal'에서 'addSubKeywordModal'로 변경
     var addSubKeywordModal = document.getElementById('addSubKeywordModal');
     if (addSubKeywordModal) {
         addSubKeywordModal.addEventListener('hidden.bs.modal', function () {
