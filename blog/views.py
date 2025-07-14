@@ -153,72 +153,53 @@ def blog_complete(request, pk):
     
 @login_required
 def shopping_keyword_list(request):
-    # 'main_keyword__isnull'을 사용하여 main_keyword 필드가 NULL인 것(즉, 메인 키워드)을 먼저 정렬하고,
-    # 그 다음에 main_keyword의 keyword로 정렬 (하위 키워드가 상위 키워드 아래에 오도록),
-    # 마지막으로 자신의 keyword로 정렬합니다.
-    all_keywords = ShoppingKeyword.objects.select_related('client', 'main_keyword').order_by(
+    # Case와 When을 사용하여 main_keyword가 NULL인 경우를 먼저 정렬하도록 합니다.
+    # main_keyword가 NULL이면 True (또는 1), 아니면 False (또는 0) 값을 할당하여 정렬 순서를 제어합니다.
+    # 여기서는 True (메인 키워드)가 먼저 오도록 할 것이므로, is_main_keyword 필드에 True/False를 할당하고
+    # 이 필드를 내림차순 정렬(-is_main_keyword)하면 True가 먼저 오게 됩니다.
+    all_keywords = ShoppingKeyword.objects.select_related('client', 'main_keyword').annotate(
+        # is_main_keyword 필드를 새로 추가하여 main_keyword가 NULL인지 여부를 불리언 값으로 저장
+        is_main_keyword=Case(
+            When(main_keyword__isnull=True, then=Value(True)),
+            default=Value(False),
+            output_field=BooleanField()
+        )
+    ).order_by(
         'client__name',          # 클라이언트 이름으로 1차 정렬
-        '-main_keyword__isnull', # main_keyword가 NULL이 아닌(즉, 서브 키워드) 것이 먼저 오도록 (False=0, True=1 이므로 -를 붙여서 1이 먼저 오게)
-                                 # 또는 단순히 main_keyword__isnull (True가 먼저 오도록)
-                                 # 정확히 의도하는 바에 따라 변경 (보통 메인 키워드가 먼저 오도록)
-                                 # 메인 키워드가 NULL인 것을 먼저: 'main_keyword__isnull'
-                                 # 메인 키워드가 NULL이 아닌 것을 먼저: '-main_keyword__isnull'
-        'main_keyword__keyword', # 상위 메인 키워드의 이름으로 정렬
+        '-is_main_keyword',      # is_main_keyword가 True인 것(메인 키워드)이 먼저 오도록 내림차순 정렬
+        'main_keyword__keyword', # 상위 메인 키워드의 이름으로 정렬 (NULL이 아닌 경우에만 유의미)
         'keyword'                # 최종적으로 자신의 키워드 이름으로 정렬
     )
 
-    # all_keywords 쿼리셋을 아래와 같이 수정하는 것이 일반적인 정렬 방식입니다:
-    # 1. 클라이언트 이름 순서
-    # 2. (메인 키워드인 경우) 메인 키워드가 없는 것을 먼저 (True = 1, False = 0이므로, True가 먼저 오려면 순방향)
-    # 3. 메인 키워드 이름을 기준으로
-    # 4. 하위 키워드 이름을 기준으로
-    # all_keywords = ShoppingKeyword.objects.select_related('client', 'main_keyword').order_by(
-    #     'client__name',
-    #     'main_keyword__isnull', # True (main_keyword가 NULL)가 먼저 옴
-    #     'main_keyword__keyword',
-    #     'keyword'
-    # )
-    
-    # 💡 정렬 순서에 대한 해석:
-    # 만약 '메인 키워드'가 제일 위에 오고 그 아래에 '하위 키워드'들이 나타나기를 원한다면:
-    # 'main_keyword__isnull' (NULL인 메인 키워드 = True, NULL이 아닌 하위 키워드 = False)
-    # True가 먼저 오므로 메인 키워드가 목록 상단에 위치합니다.
-    all_keywords = ShoppingKeyword.objects.select_related('client', 'main_keyword').order_by(
-        'client__name',          # 클라이언트별로 묶음
-        '-main_keyword__isnull', # 메인 키워드(main_keyword가 NULL인 것)가 먼저 오도록 합니다.
-                                 # 이 경우 main_keyword가 NULL이면 True, 아니면 False.
-                                 # 기본 정렬은 False가 먼저 오지만, 앞에 '-'를 붙이면 True가 먼저 옵니다.
-                                 # 즉, main_keyword가 NULL인 항목들이 (메인 키워드) 먼저 오게 됩니다.
-        'main_keyword__keyword', # 해당 메인 키워드 이름으로 정렬 (예: 애플 > 아이폰, 애플 > 아이패드)
-        'keyword'                # 최종적으로 개별 키워드 이름으로 정렬
-    )
-
-
     today = date.today()
-    date_range = [today - timedelta(days=i) for i in range(7)] 
+    date_range = [today - timedelta(days=i) for i in range(7)]
 
     for keyword in all_keywords:
+        # 이 부분은 ClickLog 모델 이름이 ClickLog라고 가정합니다.
+        # 기존 코드에서는 KeywordClick을 사용하고 있어 혼동의 여지가 있습니다.
+        # 모델 정의가 명확하지 않으므로, 둘 중 하나로 통일해야 합니다.
+        # 여기서는 주신 코드에 맞게 ClickLog를 사용했습니다.
         keyword_clicks = ClickLog.objects.filter(
             shopping_keyword=keyword,
             click_date__in=date_range
         ).order_by('click_date')
 
         clicks_by_date = {log.click_date: log.click_count for log in keyword_clicks}
-        
+
         daily_clicks_display = []
         for d in date_range:
-            daily_clicks_display.append(clicks_by_date.get(d, 0)) 
+            daily_clicks_display.append(clicks_by_date.get(d, 0))
         keyword.daily_clicks_display = daily_clicks_display
 
-    colspan_count = 5 + len(date_range) 
-    
-    sub_keyword_add_form = SubKeywordAddForm() 
+    colspan_count = 5 + len(date_range)
+
+    sub_keyword_add_form = SubKeywordAddForm()
 
     context = {
         'keywords': all_keywords,
         'date_range': date_range,
         'colspan_count': colspan_count,
-        'sub_keyword_add_form': sub_keyword_add_form, 
+        'sub_keyword_add_form': sub_keyword_add_form,
     }
     return render(request, 'blog/shopping_keyword_list.html', context)
 
