@@ -97,10 +97,10 @@
                     </div>
                     {# 키워드 이름 입력 #}
                     <div class="mb-3">
-                        <label for="id_keyword_main" class="form-label">{{ main_keyword_form.keyword.label }}</label>
+                        <label for="id_keyword_main" class="form-label">{{ main_keyword_form.main_keyword.label }}</label>
                         {{ main_keyword_form.keyword }}
                         {% if main_keyword_form.keyword.errors %}
-                            <div class="text-danger small">{{ main_keyword_form.keyword.errors }}</div>
+                            <div class="text-danger small">{{ main_keyword_form.main_keyword.errors }}</div>
                         {% endif %}
                     </div>
                     {# 키워드 그룹 (hidden input) - 이제 label 없이 바로 필드만 렌더링 #}
