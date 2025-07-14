@@ -98,8 +98,8 @@
                     {# 키워드 이름 입력 #}
                     <div class="mb-3">
                         <label for="id_keyword_main" class="form-label">{{ main_keyword_form.main_keyword.label }}</label>
-                        {{ main_keyword_form.keyword }}
-                        {% if main_keyword_form.keyword.errors %}
+                        {{ main_keyword_form.main_keyword }}
+                        {% if main_keyword_form.main_keyword.errors %}
                             <div class="text-danger small">{{ main_keyword_form.main_keyword.errors }}</div>
                         {% endif %}
                     </div>
