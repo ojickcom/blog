@@ -1,4 +1,6 @@
-{% extends 'base.html' %} {# 또는 기존 레이아웃 파일 #}
+{# blog/templates/blog/shopping_keyword_list.html #}
+{% extends 'base.html' %} 
+
 {% block title %}쇼핑 키워드 목록{% endblock %}
 
 {% load static %}
@@ -8,10 +10,12 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1 class="h3">쇼핑 키워드 목록</h1>
     <div class="btn-group">
-        <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#addMainKeywordModal">
-            <i class="bi bi-plus-circle me-1"></i> 메인 키워드 추가
+        {# "메인 키워드 추가" 버튼: 이제 "메인 키워드에 하위 키워드 추가" 역할을 합니다. #}
+        <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#addSubKeywordModal">
+            <i class="bi bi-plus-circle me-1"></i> 메인 키워드에 하위 키워드 추가
         </button>
-        <a href="{% url 'shopping_keyword_input' %}" class="btn btn-primary ms-2">새 키워드 추가</a>
+        {# "새 키워드 추가" 버튼: 이제 "새 메인 키워드 생성" 역할을 합니다. #}
+        <a href="{% url 'shopping_keyword_input' %}" class="btn btn-primary ms-2">새 메인 키워드 생성</a>
     </div>
 </div>
 
@@ -36,15 +40,15 @@
                     <tr>
                         <td>{{ keyword.client.name }}</td>
                         <td>
-                            {% if keyword.main_keyword %}
+                            {% if keyword.main_keyword %} {# main_keyword_id가 있다면 그 키워드의 keyword 필드를 표시 #}
                                 {{ keyword.main_keyword.keyword }}
-                            {% else %}
+                            {% else %} {# main_keyword_id가 NULL이면 메인 키워드이므로 '-' 표시 #}
                                 -
                             {% endif %}
                         </td>
                         <td>
                             <a href="{% url 'shopping_keyword_detail' pk=keyword.pk %}">
-                                {{ keyword.keyword }}
+                                {{ keyword.keyword }} {# 현재 keyword 객체의 keyword 필드 표시 #}
                             </a>
                         </td>
                         {% for count in keyword.daily_clicks_display %}
@@ -59,7 +63,7 @@
                         </td>
                         <td>
                             <a href="{% url 'shopping_keyword_edit' pk=keyword.pk %}" class="btn btn-sm btn-info compact-btn">수정</a>
-                            <form action="{% url 'shopping_keyword_delete' pk=keyword.pk %}" method="post" style="display:inline;" onsubmit="return confirm('정말로 삭제하시겠습니까?');"> {# 오타 수정: '삭제하시겠mka?' -> '삭제하시겠습니까?' #}
+                            <form action="{% url 'shopping_keyword_delete' pk=keyword.pk %}" method="post" style="display:inline;" onsubmit="return confirm('정말로 삭제하시겠습니까?');">
                                 {% csrf_token %}
                                 <button type="submit" class="btn btn-sm btn-danger compact-btn">삭제</button>
                             </form>
@@ -77,53 +81,64 @@
     </div>
 </div>
 
-<div class="modal fade" id="addMainKeywordModal" tabindex="-1" aria-labelledby="addMainKeywordModalLabel" aria-hidden="true">
+{# 하위 키워드 추가 모달 (새로운 이름: addSubKeywordModal) #}
+<div class="modal fade" id="addSubKeywordModal" tabindex="-1" aria-labelledby="addSubKeywordModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="addMainKeywordModalLabel">새 메인 키워드 추가</h5>
+                <h5 class="modal-title" id="addSubKeywordModalLabel">메인 키워드에 하위 키워드 추가</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form id="mainKeywordForm" method="post" action="{% url 'create_main_keyword_ajax' %}">
+            {# 폼 액션과 ID를 SubKeywordAddForm에 맞게 수정 #}
+            <form id="subKeywordAddForm" method="post" action="{% url 'create_sub_keyword_ajax' %}">
                 {% csrf_token %}
                 <div class="modal-body">
+                    {# 클라이언트 선택 #}
                     <div class="mb-3">
-                        <label for="{{ main_keyword_form.client.id_for_label }}" class="form-label">{{ main_keyword_form.client.label }}</label>
-                        {{ main_keyword_form.client }}
-                        {% if main_keyword_form.client.errors %}
+                        <label for="{{ sub_keyword_add_form.client.id_for_label }}" class="form-label">{{ sub_keyword_add_form.client.label }}</label>
+                        {{ sub_keyword_add_form.client }}
+                        {% if sub_keyword_add_form.client.errors %}
                             <div class="text-danger small">
-                                {% for error in main_keyword_form.client.errors %}<p class="mb-0">{{ error }}</p>{% endfor %}
+                                {% for error in sub_keyword_add_form.client.errors %}<p class="mb-0">{{ error }}</p>{% endfor %}
                             </div>
                         {% endif %}
                     </div>
-
+                    {# 상위 메인 키워드 선택 (ModelChoiceField) #}
                     <div class="mb-3">
-                        <label for="{{ main_keyword_form.main_keyword.id_for_label }}" class="form-label">{{ main_keyword_form.main_keyword.label }}</label>
-                        {{ main_keyword_form.main_keyword }}
-                        {% if main_keyword_form.main_keyword.errors %}
+                        <label for="{{ sub_keyword_add_form.main_keyword.id_for_label }}" class="form-label">{{ sub_keyword_add_form.main_keyword.label }}</label>
+                        {{ sub_keyword_add_form.main_keyword }}
+                        {% if sub_keyword_add_form.main_keyword.errors %}
                             <div class="text-danger small">
-                                {% for error in main_keyword_form.main_keyword.errors %}<p class="mb-0">{{ error }}</p>{% endfor %}
+                                {% for error in sub_keyword_add_form.main_keyword.errors %}<p class="mb-0">{{ error }}</p>{% endfor %}
                             </div>
                         {% endif %}
                     </div>
-
+                    {# 하위 키워드 이름 입력 #}
                     <div class="mb-3">
-                        <label for="{{ main_keyword_form.keyword_group.id_for_label }}" class="form-label">{{ main_keyword_form.keyword_group.label }}</label>
-                        {{ main_keyword_form.keyword_group }}
-                        {% if main_keyword_form.keyword_group.errors %}
+                        <label for="{{ sub_keyword_add_form.keyword.id_for_label }}" class="form-label">{{ sub_keyword_add_form.keyword.label }}</label>
+                        {{ sub_keyword_add_form.keyword }}
+                        {% if sub_keyword_add_form.keyword.errors %}
                             <div class="text-danger small">
-                                {% for error in main_keyword_form.keyword_group.errors %}<p class="mb-0">{{ error }}</p>{% endfor %}
+                                {% for error in sub_keyword_add_form.keyword.errors %}<p class="mb-0">{{ error }}</p>{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    {# 키워드 그룹 (ChoiceField) #}
+                    <div class="mb-3">
+                        <label for="{{ sub_keyword_add_form.keyword_group.id_for_label }}" class="form-label">{{ sub_keyword_add_form.keyword_group.label }}</label>
+                        {{ sub_keyword_add_form.keyword_group }}
+                        {% if sub_keyword_add_form.keyword_group.errors %}
+                            <div class="text-danger small">
+                                {% for error in sub_keyword_add_form.keyword_group.errors %}<p class="mb-0">{{ error }}</p>{% endfor %}
                             </div>
                         {% endif %}
                     </div>
                 </div>
-
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
                     <button type="submit" class="btn btn-primary">저장</button>
                 </div>
             </form>
-
         </div>
     </div>
 </div>
@@ -133,9 +148,10 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    var mainKeywordForm = document.getElementById('mainKeywordForm');
-    if (mainKeywordForm) {
-        mainKeywordForm.addEventListener('submit', function(e) {
+    // 폼 ID와 모달 ID를 'mainKeywordForm'에서 'subKeywordAddForm'으로 변경
+    var subKeywordAddForm = document.getElementById('subKeywordAddForm');
+    if (subKeywordAddForm) {
+        subKeywordAddForm.addEventListener('submit', function(e) {
             e.preventDefault(); // 기본 폼 제출 방지
 
             const formData = new FormData(this); // 폼 데이터 가져오기
@@ -158,7 +174,8 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(data => {
                 if (data.status === 'success') {
                     alert(data.message);
-                    var modal = bootstrap.Modal.getInstance(document.getElementById('addMainKeywordModal'));
+                    // 모달 ID를 'addMainKeywordModal'에서 'addSubKeywordModal'로 변경
+                    var modal = bootstrap.Modal.getInstance(document.getElementById('addSubKeywordModal'));
                     if (modal) {
                         modal.hide();
                     }
@@ -171,30 +188,23 @@ document.addEventListener('DOMContentLoaded', function() {
                     for (const fieldName in errors) {
                         if (errors.hasOwnProperty(fieldName)) {
                             const fieldErrors = errors[fieldName];
-                            // 🔴 수정 부분: keyword_group이 더 이상 HiddenInput이 아니므로,
-                            // 필드별 에러 처리 로직에 포함시킵니다.
-                            // if (fieldName === 'keyword_group') { // 이 조건문 삭제
-                            //     alert(`키워드 그룹 오류: ${fieldErrors.join(', ')}`);
-                            //     continue; 
-                            // }
-                            
-                            // id_${fieldName}으로 정확한 ID를 사용하도록 변경
-                            const inputElement = document.getElementById(`id_${fieldName}`);
+                            // 이제 모든 필드가 사용자에게 보이는 필드이므로, 별도 HiddenInput 처리는 필요 없음.
+                            // fieldName에 따라 올바른 ID를 가진 요소를 찾도록 수정
+                            const inputElement = document.getElementById(`id_${fieldName}`); // id_client, id_main_keyword, id_keyword, id_keyword_group
                             if (inputElement) {
                                 const errorDiv = document.createElement('div');
                                 errorDiv.className = 'text-danger small';
                                 errorDiv.innerHTML = fieldErrors.map(err => `<p class="mb-0">${err}</p>`).join('');
-                                // 에러 메시지를 해당 inputElement 바로 뒤에 삽입합니다.
                                 inputElement.parentNode.insertBefore(errorDiv, inputElement.nextSibling);
                             }
                         }
                     }
-                    alert('메인 키워드 추가 실패: ' + JSON.stringify(errors));
+                    alert('하위 키워드 추가 실패: ' + JSON.stringify(errors)); // 메시지 변경
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                let errorMessage = '메인 키워드 추가 중 오류가 발생했습니다.';
+                let errorMessage = '하위 키워드 추가 중 오류가 발생했습니다.';
                 if (error && typeof error === 'object' && error.message) {
                     errorMessage += ` ${error.message}`;
                 } else if (typeof error === 'string') {
@@ -205,10 +215,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    var addMainKeywordModal = document.getElementById('addMainKeywordModal');
-    if (addMainKeywordModal) {
-        addMainKeywordModal.addEventListener('hidden.bs.modal', function () {
-            mainKeywordForm.reset();
+    // 모달 ID를 'addMainKeywordModal'에서 'addSubKeywordModal'로 변경
+    var addSubKeywordModal = document.getElementById('addSubKeywordModal');
+    if (addSubKeywordModal) {
+        addSubKeywordModal.addEventListener('hidden.bs.modal', function () {
+            subKeywordAddForm.reset();
             document.querySelectorAll('.text-danger.small').forEach(el => el.remove());
         });
     }

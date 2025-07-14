@@ -1,21 +1,68 @@
-{% extends 'base.html' %} {# 또는 기존 레이아웃 파일 #}
-{% block title %}
-    {% if is_edit %}키워드 수정{% else %}새 키워드 추가{% endif %}
-{% endblock %}
+{# blog/templates/blog/shopping_keyword_input.html #}
+{% extends 'base.html' %}
+
+{% block title %}새 메인 키워드 생성{% endblock %}
+
+{% load static %}
 
 {% block content %}
-<h1 class="h3 mb-4">{% if is_edit %}키워드 수정{% else %}새 키워드 추가{% endif %}</h1>
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="card-title mb-0">새로운 메인 키워드 생성</h3>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        <ul class="messages list-unstyled">
+                            {% for message in messages %}
+                                <li{% if message.tags %} class="{{ message.tags }} alert alert-{{ message.tags }}"{% endif %}>{{ message }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        {# 클라이언트 선택 #}
+                        <div class="mb-3">
+                            <label for="{{ form.client.id_for_label }}" class="form-label">{{ form.client.label }}</label>
+                            {{ form.client }}
+                            {% if form.client.errors %}
+                                <div class="text-danger small">
+                                    {% for error in form.client.errors %}<p class="mb-0">{{ error }}</p>{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
 
-<div class="card shadow-sm">
-    <div class="card-body">
-        <form method="post">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit" class="btn btn-primary">
-                {% if is_edit %}수정{% else %}추가{% endif %}
-            </button>
-            <a href="{% url 'shopping_keyword_list' %}" class="btn btn-secondary">목록으로</a>
-        </form>
+                        {# 새로운 메인 키워드 이름 입력 (keyword 필드) #}
+                        <div class="mb-3">
+                            <label for="{{ form.keyword.id_for_label }}" class="form-label">{{ form.keyword.label }}</label>
+                            {{ form.keyword }}
+                            {% if form.keyword.errors %}
+                                <div class="text-danger small">
+                                    {% for error in form.keyword.errors %}<p class="mb-0">{{ error }}</p>{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        {# 키워드 그룹 (ChoiceField) #}
+                        <div class="mb-3">
+                            <label for="{{ form.keyword_group.id_for_label }}" class="form-label">{{ form.keyword_group.label }}</label>
+                            {{ form.keyword_group }}
+                            {% if form.keyword_group.errors %}
+                                <div class="text-danger small">
+                                    {% for error in form.keyword_group.errors %}<p class="mb-0">{{ error }}</p>{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <button type="submit" class="btn btn-primary mt-3">메인 키워드 저장</button>
+                        <a href="{% url 'shopping_keyword_list' %}" class="btn btn-secondary mt-3 ms-2">목록으로 돌아가기</a>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

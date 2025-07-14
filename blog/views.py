@@ -7,10 +7,11 @@ from django.contrib.auth.decorators import login_required # 로그인 인증 데
 from django.db.models import F # 필드 값 업데이트를 위해 F 객체 임포트
 from datetime import date, timedelta
 from django.db.models import OuterRef, Subquery, Sum
-from .models import Blog, Client, ContentSubhead, NumberCharacter, TalkStyle, ContentAspect,  ShoppingKeyword, KeywordClick,Expense
-from .forms import BlogForm, ShoppingKeywordForm,  MainShoppingKeywordForm
+from .models import Blog, Client, ContentSubhead, NumberCharacter, TalkStyle, ContentAspect,  ShoppingKeyword, KeywordClick,Expense,ShoppingKeyword, Client
+from .forms import BlogForm, SubKeywordAddForm, MainKeywordAddForm 
 import random
-from datetime import datetime    # 날짜 처리를 위해 추가
+from datetime import datetime
+
 
 
 # blog_list를 completed와 pending을 함께 보여주는 대시보드 형태로 변경하거나,
@@ -152,86 +153,54 @@ def blog_complete(request, pk):
     
 @login_required
 def shopping_keyword_list(request):
-    """
-    쇼핑 키워드 목록을 보여주는 페이지.
-    지난 10일간의 클릭 횟수도 함께 표시.
-    Client.client_type이 'shopping'인 키워드만 보여준다.
-    """
+    all_keywords = ShoppingKeyword.objects.select_related('client', 'main_keyword').order_by('client__name', 'main_keyword__keyword__isnull', 'main_keyword__keyword', 'keyword')
+
     today = date.today()
-    ten_days_ago = today - timedelta(days=9) # 오늘 포함 10일 전
+    date_range = [today - timedelta(days=i) for i in range(7)] 
 
-    # 모든 쇼핑 키워드를 가져옵니다.
-    # 변경: client__client_type이 'shopping'인 키워드만 필터링
-    all_keywords = ShoppingKeyword.objects.filter(
-        client__client_type='shopping'
-    ).select_related('client').order_by('client__name', 'keyword')
-
-    recent_clicks_data = {}
-    date_range = [ten_days_ago + timedelta(days=i) for i in range(10)]
-
-    all_recent_clicks = KeywordClick.objects.filter(
-        click_date__gte=ten_days_ago,
-        click_date__lte=today,
-        keyword__in=all_keywords # 현재 화면에 표시될 키워드들만 대상으로
-    ).values('keyword_id', 'click_date', 'click_count')
-
-    for click_item in all_recent_clicks:
-        keyword_id = click_item['keyword_id']
-        click_date = click_item['click_date']
-        click_count = click_item['click_count']
-
-        if keyword_id not in recent_clicks_data:
-            recent_clicks_data[keyword_id] = {}
-        recent_clicks_data[keyword_id][click_date] = click_count
-    
     for keyword in all_keywords:
-        keyword.recent_clicks = recent_clicks_data.get(keyword.pk, {})
-        keyword.daily_clicks_display = [
-            keyword.recent_clicks.get(d, 0) for d in date_range
-        ]
-    
-    # colspan_count 계산은 뷰에서 처리하여 템플릿으로 전달
-    # 컬럼: 클라이언트, 메인 키워드, 키워드, 날짜들, 클릭 대상, 관리
-    colspan_count = 3 + len(date_range) + 1 + 1 # (클라이언트, 메인, 키워드) + 날짜수 + 클릭대상 + 관리
-    # 3 (client, main_keyword, keyword) + len(date_range) + 1 (is_click_target) + 1 (관리)
-    # 총 5 + len(date_range)
-    # 템플릿의 colspan_count에 이미 '키워드 그룹'이 제외되었으므로, 이전 답변과 동일하게 유지됩니다.
-    # 정확히는 컬럼이 (클라이언트, 메인 키워드, 키워드, 날짜들, 클릭 대상, 관리) 이므로
-    # 3 (client, main_keyword, keyword) + len(date_range) + 1 (클릭 대상) + 1 (관리) = 5 + len(date_range)
-    colspan_count = 5 + len(date_range)
+        keyword_clicks = ClickLog.objects.filter(
+            shopping_keyword=keyword,
+            click_date__in=date_range
+        ).order_by('click_date')
 
-    main_keyword_form = MainShoppingKeywordForm()
-    return render(request, 'blog/shopping_keyword_list.html', {
+        clicks_by_date = {log.click_date: log.click_count for log in keyword_clicks}
+        
+        daily_clicks_display = []
+        for d in date_range:
+            daily_clicks_display.append(clicks_by_date.get(d, 0)) 
+        keyword.daily_clicks_display = daily_clicks_display
+
+    colspan_count = 5 + len(date_range) 
+    
+    # "메인 키워드 추가" 모달에 전달할 폼 인스턴스 (-> SubKeywordAddForm)
+    sub_keyword_add_form = SubKeywordAddForm() 
+
+    context = {
         'keywords': all_keywords,
         'date_range': date_range,
-        'colspan_count': colspan_count, # 계산된 colspan_count 전달
-        'main_keyword_form': main_keyword_form, 
-    })
+        'colspan_count': colspan_count,
+        'sub_keyword_add_form': sub_keyword_add_form, # 모달용 폼 이름 변경 및 전달
+    }
+    return render(request, 'blog/shopping_keyword_list.html', context)
 
 
 @login_required
-def shopping_keyword_input(request, pk=None):
-    """
-    쇼핑 키워드 입력 (생성/수정) 페이지.
-    pk가 있으면 수정, 없으면 생성.
-    main_keyword와 keyword_group을 입력/수정 가능.
-    """
-    keyword_instance = None
-    if pk: # 수정 모드
-        keyword_instance = get_object_or_404(ShoppingKeyword, pk=pk)
-
+def shopping_keyword_input(request): # 이 함수는 이제 새로운 메인 키워드를 생성합니다.
     if request.method == 'POST':
-        form = ShoppingKeywordForm(request.POST, instance=keyword_instance)
+        form = MainKeywordAddForm(request.POST) # MainKeywordAddForm 사용
         if form.is_valid():
-            form.save()
-            return redirect('shopping_keyword_list')
-    else: # GET 요청
-        form = ShoppingKeywordForm(instance=keyword_instance)
+            # MainKeywordAddForm의 save 메서드에서 main_keyword = None 처리
+            form.save() 
+            messages.success(request, f"'{form.cleaned_data['keyword']}' 메인 키워드가 성공적으로 추가되었습니다.")
+            return redirect('shopping_keyword_list') 
+        else:
+            messages.error(request, '메인 키워드 추가에 실패했습니다. 입력값을 확인해주세요.')
+    else:
+        form = MainKeywordAddForm() # GET 요청 시 빈 폼 생성
 
-    return render(request, 'blog/shopping_keyword_input.html', {
-        'form': form,
-        'is_edit': pk is not None,
-    })
+    return render(request, 'blog/shopping_keyword_input.html', {'form': form})
+
 
 @login_required
 @require_POST
@@ -318,13 +287,11 @@ def client_list(request):
 @login_required
 @require_POST
 @csrf_exempt
-def create_main_keyword_ajax(request):
-    form = MainShoppingKeywordForm(request.POST)
+def create_sub_keyword_ajax(request): # 함수명 변경 (하위 키워드 추가)
+    form = SubKeywordAddForm(request.POST) # SubKeywordAddForm 사용
     if form.is_valid():
-        main_keyword_obj = form.save(commit=False)
-        main_keyword_obj.main_keyword = None 
-        # form.save() 시 keyword_group은 HiddenInput의 initial 값('기본')으로 저장됩니다.
-        main_keyword_obj.save()
-        return JsonResponse({'status': 'success', 'message': '메인 키워드가 성공적으로 추가되었습니다.'})
+        form.save() 
+        return JsonResponse({'status': 'success', 'message': f"'{form.cleaned_data['keyword']}' 하위 키워드가 '{form.cleaned_data['main_keyword'].keyword}'에 성공적으로 추가되었습니다."})
     else:
+        # 폼 유효성 검사 실패 시 에러 메시지 반환 (디버깅 용이하게 errors를 그대로 반환)
         return JsonResponse({'status': 'error', 'errors': form.errors}, status=400)
