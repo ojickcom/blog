@@ -229,29 +229,29 @@ def create_sub_keyword_ajax(request):
             return JsonResponse({'status': 'error', 'message': '입력값을 확인해주세요.', 'errors': errors}, status=400)
     return JsonResponse({'status': 'error', 'message': '유효하지 않은 요청입니다.'}, status=405)
 
-@login_required
-def shopping_keyword_input(request):
-    if request.method == 'POST':
-        form = MainKeywordInitialAddForm(request.POST)
-        if form.is_valid():
-            try:
-                new_keyword = form.save() # save() 메서드에서 M2M 필드는 처리되지 않음 (초기에는 그룹 없음)
-                messages.success(request, '새 메인 키워드(클라이언트만 설정)가 성공적으로 생성되었습니다. 이제 키워드 이름과 그룹을 추가할 수 있습니다.')
-                # 생성된 키워드의 수정 페이지로 리다이렉트하여 이름과 그룹을 바로 설정하도록 유도
-                return redirect('shopping_keyword_edit', pk=new_keyword.pk) 
-            except Exception as e:
-                messages.error(request, f'메인 키워드 생성 중 오류가 발생했습니다: {e}')
-        else:
-            for field, errors in form.errors.items():
-                for error in errors:
-                    messages.error(request, f"{form.fields[field].label}: {error}")
-    else:
-        form = MainKeywordInitialAddForm()
+# @login_required
+# def shopping_keyword_input(request):
+#     if request.method == 'POST':
+#         form = MainKeywordInitialAddForm(request.POST)
+#         if form.is_valid():
+#             try:
+#                 new_keyword = form.save() # save() 메서드에서 M2M 필드는 처리되지 않음 (초기에는 그룹 없음)
+#                 messages.success(request, '새 메인 키워드(클라이언트만 설정)가 성공적으로 생성되었습니다. 이제 키워드 이름과 그룹을 추가할 수 있습니다.')
+#                 # 생성된 키워드의 수정 페이지로 리다이렉트하여 이름과 그룹을 바로 설정하도록 유도
+#                 return redirect('shopping_keyword_edit', pk=new_keyword.pk) 
+#             except Exception as e:
+#                 messages.error(request, f'메인 키워드 생성 중 오류가 발생했습니다: {e}')
+#         else:
+#             for field, errors in form.errors.items():
+#                 for error in errors:
+#                     messages.error(request, f"{form.fields[field].label}: {error}")
+#     else:
+#         form = MainKeywordInitialAddForm()
 
-    context = {
-        'form': form,
-    }
-    return render(request, 'blog/shopping_keyword_input.html', context)
+#     context = {
+#         'form': form,
+#     }
+#     return render(request, 'blog/shopping_keyword_input.html', context)
 
 
 # @login_required
