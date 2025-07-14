@@ -207,16 +207,15 @@ class MainKeywordNameUpdateForm(forms.ModelForm):
 
 # 하위 키워드 추가 폼
 class SubKeywordAddForm(forms.ModelForm):
-    # keyword_group 대신 groups 필드를 ModelMultipleChoiceField로 변경
     groups = forms.ModelMultipleChoiceField(
-        queryset=KeywordGroup.objects.all().order_by('name'), # 모든 KeywordGroup 객체를 선택지로 제공
-        widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'}), # 다중 선택을 위한 체크박스 위젯
-        required=False, # 그룹 선택은 필수가 아님
+        queryset=KeywordGroup.objects.all().order_by('name'),
+        widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'}),
+        required=False,
         label="키워드 그룹 (선택)"
     )
+
     class Meta:
         model = ShoppingKeyword
-        # fields = ['client', 'main_keyword', 'keyword', 'keyword_group'] 대신 'groups' 사용
         fields = ['client', 'main_keyword', 'keyword', 'groups']
         labels = {
             'client': '클라이언트',
@@ -232,11 +231,4 @@ class SubKeywordAddForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # main_keyword 선택지를 메인 키워드만 보여주도록 필터링
         self.fields['main_keyword'].queryset = ShoppingKeyword.objects.filter(main_keyword__isnull=True).exclude(keyword='').order_by('keyword')
-        
-    def save(self, commit=True):
-        instance = super().save(commit)
-        if commit:
-            self.save_m2m() # ManyToManyField 저장을 위해 필요
-        return instance

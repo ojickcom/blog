@@ -152,7 +152,6 @@ def blog_complete(request, pk):
     
 @login_required
 def shopping_keyword_list(request):
-    # groups를 prefetch_related에 추가하여 N+1 쿼리 방지
     keywords = ShoppingKeyword.objects.select_related('client', 'main_keyword').prefetch_related('sub_keywords', 'clicks', 'groups').order_by(
         'client__name',
         Case(
@@ -177,7 +176,6 @@ def shopping_keyword_list(request):
         ]
         keyword_obj.is_click_target = True 
 
-    # SubKeywordAddForm의 main_keyword 선택지를 정확히 필터링합니다.
     sub_keyword_add_form = SubKeywordAddForm()
     sub_keyword_add_form.fields['main_keyword'].queryset = ShoppingKeyword.objects.filter(main_keyword__isnull=True).exclude(keyword='').order_by('keyword')
 
@@ -188,6 +186,7 @@ def shopping_keyword_list(request):
         'sub_keyword_add_form': sub_keyword_add_form,
     }
     return render(request, 'blog/shopping_keyword_list.html', context)
+
 @login_required
 def shopping_keyword_edit(request, pk):
     keyword = get_object_or_404(ShoppingKeyword, pk=pk)
@@ -220,14 +219,48 @@ def create_sub_keyword_ajax(request):
         form = SubKeywordAddForm(request.POST)
         if form.is_valid():
             try:
-                sub_keyword = form.save() # 폼의 save() 메서드 내부에서 save_m2m()이 호출됩니다.
+                # 폼에서 save 메소드를 제거했으므로, 이제 이렇게만 호출해도 됩니다.
+                # Many-to-Many 필드도 자동으로 저장됩니다.
+                new_sub_keyword = form.save() 
+                
+                # created_by, updated_by 필드가 모델에 있다면 이곳에서 할당 후 저장해야 합니다.
+                # 하지만 form.save()가 이미 저장했으므로, save(commit=False)를 사용하지 않는다면
+                # 이 시점에는 instance를 업데이트하고 다시 save 해야 합니다.
+                # (ModelForm에서 created_by/updated_by를 자동으로 처리하는 방법도 있습니다)
+                
+                # 예를 들어, created_by/updated_by를 ModelForm에서 제외하고 뷰에서 할당한다면:
+                # new_sub_keyword = form.save(commit=False) # 일단 인스턴스만 생성
+                # new_sub_keyword.created_by = request.user
+                # new_sub_keyword.updated_by = request.user
+                # new_sub_keyword.save() # 인스턴스 저장
+                # form.save_m2m() # M2M 필드 저장 (이 경우 필요)
+
+                # 현재 form.save()만 호출하는 방식에서는 created_by/updated_by가 ModelForm의 fields에 없으면
+                # 처음 저장 시점에 이 필드들이 비어있을 수 있습니다.
+                # ModelForm에 `created_by`와 `updated_by` 필드가 포함되어 있고, 이들을 자동으로 현재 사용자로
+                # 설정하는 로직이 있다면 이대로 두는 것이 맞습니다.
+                # 그렇지 않다면, `form.save(commit=False)`와 `form.save_m2m()` 패턴을 사용하는 것이 좋습니다.
+
+                # 안전하게 created_by/updated_by를 설정하고 M2M 필드를 저장하는 패턴:
+                new_sub_keyword = form.save(commit=False) # 인스턴스만 생성
+                new_sub_keyword.created_by = request.user # 유저 할당 (모델 필드에 맞게 조정)
+                new_sub_keyword.updated_by = request.user # 유저 할당
+                new_sub_keyword.save() # 인스턴스 저장
+                form.save_m2m() # M2M 필드 저장
+
                 return JsonResponse({'status': 'success', 'message': '하위 키워드가 성공적으로 추가되었습니다.'})
             except Exception as e:
-                return JsonResponse({'status': 'error', 'message': f'하위 키워드 추가 실패: {e}'}, status=400)
+                # 트랜잭션 사용은 ModelForm.save()가 내부적으로 처리하므로, 여기서는 별도로 명시할 필요는 없습니다.
+                # 하지만 데이터베이스 관련 예외를 처리하는 것은 좋은 습관입니다.
+                return JsonResponse({'status': 'error', 'message': f'데이터 저장 중 오류가 발생했습니다: {e}'}, status=500)
         else:
-            errors = form.errors.as_json()
-            return JsonResponse({'status': 'error', 'message': '입력값을 확인해주세요.', 'errors': errors}, status=400)
-    return JsonResponse({'status': 'error', 'message': '유효하지 않은 요청입니다.'}, status=405)
+            # 폼 유효성 검사 실패 시
+            return JsonResponse({
+                'status': 'error',
+                'message': '유효성 검사 실패',
+                'errors': form.errors.as_json()
+            }, status=400)
+    return JsonResponse({'status': 'error', 'message': '잘못된 요청 방식'}, status=405)
 
 @login_required
 def shopping_keyword_input(request):
