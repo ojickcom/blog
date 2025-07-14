@@ -169,9 +169,9 @@ def shopping_keyword_list(request):
     date_range = [today - timedelta(days=i) for i in range(7)]
 
     for keyword in all_keywords:
-        # 🔴 이 부분을 ClickLog -> KeywordClick으로 변경합니다.
+        # 🔴 이 부분을 수정합니다: shopping_keyword=keyword -> keyword=keyword
         keyword_clicks = KeywordClick.objects.filter(
-            shopping_keyword=keyword,
+            keyword=keyword, # 또는 keyword_id=keyword.id
             click_date__in=date_range
         ).order_by('click_date')
 
@@ -193,7 +193,6 @@ def shopping_keyword_list(request):
         'sub_keyword_add_form': sub_keyword_add_form,
     }
     return render(request, 'blog/shopping_keyword_list.html', context)
-
 
 @login_required
 def shopping_keyword_input(request): # 이 함수는 이제 새로운 메인 키워드를 생성합니다.
