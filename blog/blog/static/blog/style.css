@@ -1,0 +1,47 @@
+.compact-card {
+    font-size: 0.75rem;
+    min-height: 60px;
+}
+.compact-card .card-body {
+    padding: 0.3rem 0.4rem; /* 상하 최소 패딩 */
+    gap: 0; /* 내부 간격 제거 */
+}
+.card-body.d-flex.flex-column {
+    gap: 0 !important; /* 추가 안전 처리 */
+}
+.title-container {
+    min-height: auto;
+    margin-bottom: 0.05rem; /* 거의 없앰 */
+}
+.compact-title {
+    font-size: 0.85rem;
+    line-height: 1;
+    margin-bottom: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.compact-meta {
+    font-size: 0.65rem;
+    line-height: 1;
+    margin: 0;
+    padding: 0;
+}
+.meta-section {
+    margin-top: auto; /* 하단에 고정 */
+    padding-top: 0.15rem;
+    padding-bottom: 0;
+}
+.compact-btn, .copy-btn {
+    font-size: 0.6rem;
+    padding: 0.05rem 0.25rem;
+    min-height: 20px;
+    line-height: 1;
+}
+.copy-btn {
+    min-width: 40px;
+}
+.compact-header {
+    font-size: 1rem;
+    margin-bottom: 0.4rem;
+}
