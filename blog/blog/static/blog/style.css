@@ -98,7 +98,7 @@
 /* --- list_pending.html 관련 스타일 (새로 추가되는 내용) --- */
 /* b_title이 너무 길 때 2줄로 제한하고 ... 처리 */
 .card-title-two-lines {
-    height: 3em; /* 대략 두 줄 높이 */
+    height: 40px; /* 대략 두 줄 높이 */
     overflow: hidden;
     text-overflow: ellipsis;
     display: -webkit-box;
