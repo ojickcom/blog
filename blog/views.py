@@ -299,12 +299,14 @@ def client_list(request):
     expenses = Expense.objects.all()
     completed_sum = clients.filter(is_completed=True).aggregate(total=Sum('payment_amount'))['total'] or 0
     pending_sum = clients.filter(is_completed=False).aggregate(total=Sum('payment_amount'))['total'] or 0
+    total_expense_sum = expenses.aggregate(total=Sum('price'))['total'] or 0
     # 템플릿에 전달할 컨텍스트를 정의합니다.
     context = {
         'clients': clients,
                 'completed_sum': completed_sum,
         'pending_sum': pending_sum,
         'expenses': expenses,
+        'total_expense_sum': total_expense_sum,
     }
     
     # 'client_list.html' 템플릿을 렌더링하며 데이터를 전달합니다.

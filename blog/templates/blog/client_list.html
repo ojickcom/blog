@@ -71,6 +71,13 @@
         </tr>
         {% endfor %}
     </tbody>
-</table>
+    <tfoot class="table-group-divider">
+        <tr>
+            <th colspan="1" class="text-end">총 합계:</th>
+            <th class="text-start">{{ total_expense_sum|intcomma|default:0 }}원</th>
+            <th colspan="2"></th>
+        </tr>
+    </tfoot>
+    </table>
 
 {% endblock %}
