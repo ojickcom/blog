@@ -110,17 +110,15 @@ class MainShoppingKeywordForm(forms.ModelForm):
     class Meta:
         model = ShoppingKeyword
         # client, keyword, keyword_group만 필요합니다. main_keyword는 null이므로 필요 없습니다.
-        fields = ['client', 'keyword', 'keyword_group']
+        fields = ['client', 'main_keyword']
         labels = {
             'client': '클라이언트',
-            'keyword': '메인 키워드 이름',
+            'main_keyword': '메인 키워드 이름',
             # keyword_group의 레이블은 HiddenInput이므로 사실상 필요 없지만,
             # 명시적으로 None으로 설정하여 템플릿 렌더링 시에도 표시되지 않도록 합니다.
-            'keyword_group': None,
         }
         widgets = {
-            'keyword': forms.TextInput(attrs={'placeholder': '메인 키워드 이름을 입력하세요'}),
-            'keyword_group': forms.HiddenInput(), # <-- 이 부분을 HiddenInput으로 변경!
+            'main_keyword': forms.TextInput(attrs={'placeholder': '메인 키워드 이름을 입력하세요'}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -133,10 +131,10 @@ class MainShoppingKeywordForm(forms.ModelForm):
         self.fields['keyword_group'].initial = '기본' # <-- '기본' 값으로 초기화!
 
     def clean_keyword(self):
-        keyword = self.cleaned_data['keyword']
+        main_keyword = self.cleaned_data['main_keyword']
         client = self.cleaned_data.get('client')
         
-        if client and ShoppingKeyword.objects.filter(client=client, keyword=keyword).exists():
-            raise forms.ValidationError(f"'{keyword}' 키워드는 이미 이 클라이언트에 존재합니다. 다른 이름을 사용해주세요.")
-        return keyword
+        if client and ShoppingKeyword.objects.filter(client=client, main_keyword=main_keyword).exists():
+            raise forms.ValidationError(f"'{main_keyword}' 키워드는 이미 이 클라이언트에 존재합니다. 다른 이름을 사용해주세요.")
+        return main_keyword
 
