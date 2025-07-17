@@ -117,12 +117,7 @@
             <a class="navbar-brand" href="{% url 'blog_list_pending' %}">📝 블로그</a>
             <a class="navbar-brand" href="{% url 'shopping_keyword_list' %}">📝 쇼핑 전체</a>
                     {# 각 키워드 그룹별 버튼 #}
-        {% for group_name in available_groups %}
-            <a href="?group={{ group_name }}"
-               class="btn btn-outline-primary btn-sm {% if group_name == selected_group_name %}active{% endif %}">
-                {{ group_name }}
-            </a>
-        {% endfor %}
+
     </div>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
