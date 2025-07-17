@@ -10,6 +10,7 @@
 
 
 {% block content %}
+<div class="list-completed">  
 <div class="container mt-4">
     {# 클라이언트 필터링 버튼들 #}
     <div class="d-flex flex-wrap ms-2 gap-1 mb-3"> {# mb-3 추가로 아래 내용과 간격 #}
@@ -26,7 +27,7 @@
             </a>
         {% endfor %}
     </div>
-
+</div>
     {% if blogs %}
     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-2">
         {% for blog in blogs %}
