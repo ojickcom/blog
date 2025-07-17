@@ -48,10 +48,12 @@
 
 /* list_completed.html 관련 스타일 (기존 내용) */
 .compact-card {
+    background-color: #264663; 
     font-size: 0.5rem;
     min-height: 40px;
 }
 .compact-card .card-body {
+    background-color: #264663; 
     padding: 0.2rem 0.2rem; /* 상하 최소 패딩 */
     gap: 0; /* 내부 간격 제거 */
 }
