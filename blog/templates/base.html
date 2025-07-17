@@ -10,6 +10,108 @@
     <title>{% block title %}블로그{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+        /* === 공통 기본 스타일 === */
+        body {
+            background-color: #f8f9fa;
+        }
+        .navbar-brand {
+            font-weight: bold;
+        }
+        .card {
+            transition: transform 0.2s;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+        }
+        .blog-image {
+            height: 200px;
+            object-fit: cover;
+        }
+        .title-preview {
+            background-color: #e9ecef;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            border-left: 4px solid #007bff;
+        }
+        .navbar-nav .nav-link {
+            margin: 0 0.2rem;
+        }
+
+        /* === 공통 카드 스타일 === */
+        .compact-card {
+            font-size: 0.75rem;
+            min-height: 60px;
+        }
+        .compact-card .card-body {
+            padding: 0.3rem 0.4rem;
+            gap: 0;
+        }
+        .card-body.d-flex.flex-column {
+            gap: 0 !important;
+        }
+        .title-container {
+            min-height: auto;
+            margin-bottom: 0.05rem;
+        }
+        .compact-title {
+            font-size: 0.85rem;
+            line-height: 1;
+            margin-bottom: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .compact-meta {
+            font-size: 0.65rem;
+            line-height: 1;
+            margin: 0;
+            padding: 0;
+        }
+        .meta-section {
+            margin-top: auto;
+            padding-top: 0.15rem;
+            padding-bottom: 0;
+        }
+        .compact-btn,
+        .copy-btn {
+            font-size: 0.6rem;
+            padding: 0.05rem 0.25rem;
+            min-height: 20px;
+            line-height: 1;
+        }
+        .copy-btn {
+            min-width: 40px;
+        }
+        .compact-header {
+            font-size: 1rem;
+            margin-bottom: 0.4rem;
+        }
+
+        /* === list_completed.html 전용 스타일 === */
+        .list-completed .compact-card {
+            background-color: #264663;
+            font-size: 0.5rem;
+            min-height: 40px;
+        }
+        .list-completed .compact-card .card-body {
+            background-color: #264663;
+            padding: 0.2rem 0.2rem;
+        }
+        .list-completed .compact-title {
+            font-size: 0.6rem;
+        }
+
+        /* === list_pending.html 전용 스타일 === */
+        .card-title-two-lines {
+            height: 60px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+        }
+    </style>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
