@@ -58,7 +58,7 @@ class BlogAdmin(admin.ModelAdmin):
     raw_id_fields = ['client']
 @admin.register(ShoppingKeyword)
 class ShoppingKeywordAdmin(admin.ModelAdmin):
-    list_display = ('client', 'keyword')
+    list_display = ('client', 'keyword', 'KeywordGroup')
     list_filter = ('client',)
     search_fields = ('keyword', 'client__name')
     raw_id_fields = ('client', 'main_keyword')  # 클라이언트가 많을 때 유용
