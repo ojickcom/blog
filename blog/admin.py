@@ -58,7 +58,7 @@ class BlogAdmin(admin.ModelAdmin):
     raw_id_fields = ['client']
 @admin.register(ShoppingKeyword)
 class ShoppingKeywordAdmin(admin.ModelAdmin):
-    list_display = ('client', 'keyword', 'KeywordGroup')
+    list_display = ('client', 'keyword', 'get_groups_display')
     list_filter = ('client',)
     search_fields = ('keyword', 'client__name')
     raw_id_fields = ('client', 'main_keyword')  # 클라이언트가 많을 때 유용
@@ -74,6 +74,15 @@ class ShoppingKeywordAdmin(admin.ModelAdmin):
                 except ShoppingKeyword.DoesNotExist:
                     pass
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
+    def get_groups_display(self, obj):
+        """
+        ManyToMany 필드인 groups의 이름을 쉼표로 구분하여 반환합니다.
+        """
+        # `groups.all()`을 호출하여 관련된 모든 KeywordGroup 객체를 가져옵니다.
+        # 그리고 각 객체의 `name` 속성을 사용하여 문자열로 만듭니다.
+        return ", ".join([group.name for group in obj.groups.all()])
+    
+    get_groups_display.short_description = "키워드 그룹" # Admin 페이지 컬럼 헤더 이름
 
 @admin.register(KeywordClick)
 class KeywordClickAdmin(admin.ModelAdmin):
