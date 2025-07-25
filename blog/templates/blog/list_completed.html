@@ -8,11 +8,13 @@
 <link rel="stylesheet" href="{% static 'blog/style.css' %}">
 {% endblock %}
 
-
 {% block content %}
-<div class="list-completed">  
+{# 기존의 <div class="list-completed"> 와 중첩된 <div class="container mt-4">를 제거하고, #}
+{# 모든 콘텐츠가 base.html의 .container 안에 놓이도록 합니다. #}
+{# 필터링 버튼과 카드 목록이 동일한 부모 컨테이너 아래에 있게 됩니다. #}
+
     {# 클라이언트 필터링 버튼들 #}
-    <div class="d-flex flex-wrap ms-2 gap-1 mb-3"> {# mb-3 추가로 아래 내용과 간격 #}
+    <div class="d-flex flex-wrap ms-2 gap-1 mb-3 mt-4"> {# mt-4 추가: base.html의 container가 없던 자리에 top 마진 추가 #}
         {# "전체" 버튼 #}
         <a href="{% url request.resolver_match.url_name %}" 
            class="btn btn-outline-secondary btn-sm {% if not selected_client_name %}active{% endif %}">
@@ -26,11 +28,12 @@
             </a>
         {% endfor %}
     </div>
-</div>
+
     {% if blogs %}
-    <div class="row row-cols-5 g-2">
+    {# row-cols-5 g-2 유지 또는 반응형으로 변경 가능 (shopping_keyword_click_list처럼) #}
+    <div class="row row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 g-2"> 
         {% for blog in blogs %}
-        <div class="col d-flex flex-wrap gap-2 justify-content-start">
+        <div class="col d-flex flex-wrap gap-2 justify-content-start"> {# d-flex flex-wrap gap-2 justify-content-start는 col 내부가 아닌 card 자체에 더 적합할 수 있습니다. #}
             <div class="card h-100 shadow-sm compact-card">
                 <div class="card-body d-flex flex-column">
                     {# Title and Copy Button on one line #}
@@ -46,7 +49,7 @@
                                 title="클립보드에 제목 복사">
                             📋 복사
                         </button>
-                    </div>              
+                    </div>              
                     {# Client, Date and Delete button in one line #}
                     <div class="d-flex align-items-center justify-content-between compact-meta meta-section">
                         <span class="text-muted">
@@ -66,7 +69,6 @@
     {% else %}
     <p class="alert alert-info">블로그 글이 없습니다.</p>
     {% endif %}
-</div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
