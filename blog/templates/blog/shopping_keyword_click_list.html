@@ -9,6 +9,7 @@
 {% endblock %}
 
 {% block content %}
+<div class="container mt-4"> {# <--- 이 div를 추가합니다. #}
 
     {# 키워드 그룹 필터링 버튼들 #}
     <div class="d-flex flex-wrap ms-2 gap-1 mb-3">
@@ -65,6 +66,10 @@
     <p class="alert alert-info">등록된 키워드가 없습니다.</p>
     {% endif %}
 
+    {# 모달은 이 컨테이너 안에 있어도 되고 밖에 있어도 무방하지만, 일반적으로 콘텐츠와 분리하는 것이 좋습니다. #}
+    {# 여기서는 콘텐츠와 관련된 부분이므로 컨테이너 안에 유지하는 것이 나쁘지 않습니다. #}
+</div> {# <--- 이 닫는 div를 추가합니다. #}
+
 
 <div class="modal fade" id="copySuccessModal" tabindex="-1" aria-labelledby="copySuccessModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-sm">
@@ -85,6 +90,7 @@
 </div>
 
 <script>
+// JavaScript 코드는 변경할 필요 없습니다.
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize tooltips (requires Bootstrap JS and Popper.js)
     var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
