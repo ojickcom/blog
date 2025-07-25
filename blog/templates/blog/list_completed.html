@@ -49,18 +49,8 @@
                                 title="클립보드에 제목 복사">
                             📋 복사
                         </button>
-                    </div>              
-                    {# Client, Date and Delete button in one line #}
-                    <div class="d-flex align-items-center justify-content-between compact-meta meta-section">
-                        <span class="text-muted">
-                            {% if blog.client %} <small style="font-size: 0.75rem;">{{ blog.client.name }} | </small>{% endif %}
-                            {# 날짜 표시를 원하시면 여기에 추가: <small style="font-size: 0.75rem;">{{ blog.written_date|date:"Y-m-d" }}</small> #}
-                        </span>
-                        <form action="{% url 'blog_delete' blog.pk %}" method="post" class="d-inline">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-sm btn-outline-danger compact-btn" onclick="return confirm('정말로 이 블로그 글을 삭제하시겠습니까?');">삭제</button>
-                        </form>
                     </div>
+
                 </div>
             </div>
         </div>
