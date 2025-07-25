@@ -27,11 +27,12 @@
     </div>
 
     {% if keywords %} {# 'keywords' 변수로 이름 변경 #}
-    <div class="row row-cols-5 g-2">
+    {# row-cols-auto 를 고려하여 유연성 확보. 필요하다면 row-cols-5 유지 #}
+    <div class="row row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 g-2"> 
         {% for keyword_obj in keywords %} {# 'keyword_obj'로 변수명 변경 (blog와 혼동 방지) #}
-        <div class="col ">
-            <div class="card compact-card h-100"></div>
-            <div class="d-flex flex-wrap gap-2 justify-content-start">
+        <div class="col">
+            {# card compact-card h-100 안에 모든 카드 내용을 포함하도록 수정 #}
+            <div class="card compact-card h-100 shadow-sm"> {# shadow-sm 추가하여 시각적으로 카드 느낌 강화 #}
                 <div class="card-body d-flex flex-column">
                     {# Keyword and Copy Button on one line #}
                     <div class="d-flex align-items-start title-container">
@@ -47,7 +48,6 @@
                             📋 복사
                         </button>
                     </div>
-     
                     {# Main Keyword (if exists) #}
                     <div class="compact-meta mt-1">
                         {% if keyword_obj.main_keyword %}
@@ -58,7 +58,6 @@
                     </div>
                 </div>
             </div>
-                                </div>  
         </div>
         {% endfor %}
     </div>
