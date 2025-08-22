@@ -43,9 +43,26 @@ def blog_list_completed(request):
 
 @login_required
 def blog_list_pending(request):
-    """블로그 목록 페이지 - blog_write가 False인 작성 대기 중인 글만 표시"""
     blogs_pending = Blog.objects.filter(blog_write=False).select_related('client').order_by('-written_date')
-    return render(request, 'blog/list_pending.html', {'blogs': blogs_pending, 'list_title': '포스팅용도 글 '})
+    # 만약 특정 클라이언트가 선택되었다면, 해당 클라이언트의 글만 필터링
+    if selected_client_name:
+        blogs_query = blogs_query.filter(client__name=selected_client_name)
+    
+    # 최종적으로 날짜순으로 정렬
+    blogs_pending = blogs_query.order_by('-written_date')
+
+    # 필터링 드롭다운을 위해 모든 클라이언트의 이름 목록 가져오기
+    available_clients = Client.objects.values_list('name', flat=True).distinct().order_by('name')
+
+    # 템플릿에 전달할 데이터
+    context = {
+        'blogs': blogs_pending, 
+        'list_title': '포스팅용도 글',
+        'available_clients': available_clients,       # 클라이언트 목록 추가
+        'selected_client_name': selected_client_name, # 현재 선택된 클라이언트 이름 추가
+    }
+    
+    return render(request, 'blog/list_pending.html', context)
 
 @login_required
 def blog_write(request):
@@ -78,9 +95,6 @@ def blog_write(request):
             })
     else: # GET 요청
         form = BlogForm()
-        # GET 요청 시, 블로그 제목 구성 요소를 랜덤으로 가져와 조합하여 템플릿으로 전달
-        # 초기 로드 시 클라이언트가 선택되지 않았으므로 None을 전달합니다.
-        # 이 데이터는 JS가 클라이언트 변경 시 업데이트할 초기 값으로만 사용됩니다.
         return render(request, 'blog/write.html', {
             'form': form,
             **_get_random_title_components_data(None)
@@ -219,29 +233,7 @@ def create_sub_keyword_ajax(request):
         form = SubKeywordAddForm(request.POST)
         if form.is_valid():
             try:
-                # 폼에서 save 메소드를 제거했으므로, 이제 이렇게만 호출해도 됩니다.
-                # Many-to-Many 필드도 자동으로 저장됩니다.
                 new_sub_keyword = form.save() 
-                
-                # created_by, updated_by 필드가 모델에 있다면 이곳에서 할당 후 저장해야 합니다.
-                # 하지만 form.save()가 이미 저장했으므로, save(commit=False)를 사용하지 않는다면
-                # 이 시점에는 instance를 업데이트하고 다시 save 해야 합니다.
-                # (ModelForm에서 created_by/updated_by를 자동으로 처리하는 방법도 있습니다)
-                
-                # 예를 들어, created_by/updated_by를 ModelForm에서 제외하고 뷰에서 할당한다면:
-                # new_sub_keyword = form.save(commit=False) # 일단 인스턴스만 생성
-                # new_sub_keyword.created_by = request.user
-                # new_sub_keyword.updated_by = request.user
-                # new_sub_keyword.save() # 인스턴스 저장
-                # form.save_m2m() # M2M 필드 저장 (이 경우 필요)
-
-                # 현재 form.save()만 호출하는 방식에서는 created_by/updated_by가 ModelForm의 fields에 없으면
-                # 처음 저장 시점에 이 필드들이 비어있을 수 있습니다.
-                # ModelForm에 `created_by`와 `updated_by` 필드가 포함되어 있고, 이들을 자동으로 현재 사용자로
-                # 설정하는 로직이 있다면 이대로 두는 것이 맞습니다.
-                # 그렇지 않다면, `form.save(commit=False)`와 `form.save_m2m()` 패턴을 사용하는 것이 좋습니다.
-
-                # 안전하게 created_by/updated_by를 설정하고 M2M 필드를 저장하는 패턴:
                 new_sub_keyword = form.save(commit=False) # 인스턴스만 생성
                 new_sub_keyword.created_by = request.user # 유저 할당 (모델 필드에 맞게 조정)
                 new_sub_keyword.updated_by = request.user # 유저 할당
@@ -294,24 +286,6 @@ def shopping_keyword_input(request):
         'form': form,
     }
     return render(request, 'blog/shopping_keyword_input.html', context)
-
-
-# @login_required
-# def shopping_keyword_input(request): # 이 함수는 이제 새로운 메인 키워드를 생성합니다.
-#     if request.method == 'POST':
-#         form = MainKeywordAddForm(request.POST) # MainKeywordAddForm 사용
-#         if form.is_valid():
-#             # MainKeywordAddForm의 save 메서드에서 main_keyword = None 처리
-#             form.save() 
-#             messages.success(request, f"'{form.cleaned_data['keyword']}' 메인 키워드가 성공적으로 추가되었습니다.")
-#             return redirect('shopping_keyword_list') 
-#         else:
-#             messages.error(request, '메인 키워드 추가에 실패했습니다. 입력값을 확인해주세요.')
-#     else:
-#         form = MainKeywordAddForm() # GET 요청 시 빈 폼 생성
-
-#     return render(request, 'blog/shopping_keyword_input.html', {'form': form})
-
 
 @login_required
 @require_POST
@@ -413,18 +387,9 @@ def shopping_keyword_click_list(request):
     키워드 그룹별로 필터링 가능.
     """
     selected_group_name = request.GET.get('group') # URL 쿼리 파라미터 'group' 가져오기
-
-    # 모든 활성 키워드 그룹 이름 가져오기 (필터링 버튼에 사용)
-    # 키워드 그룹 데이터가 없으면 비어있는 리스트 반환
     available_groups_queryset = KeywordGroup.objects.all().order_by('name')
     available_groups = [group.name for group in available_groups_queryset]
-
-    # 모든 쇼핑 키워드를 가져오되, main_keyword와 groups를 미리 가져옴
-    # groups 필드를 통해 필터링할 수 있도록 .prefetch_related('groups') 추가
     keywords_queryset = ShoppingKeyword.objects.select_related('main_keyword').prefetch_related('groups')
-
-    # '클릭 대상'이 True인 키워드만 보여줄 경우 필터 추가 (선택 사항)
-    # keywords_queryset = keywords_queryset.filter(is_click_target=True) 
 
     if selected_group_name:
         # 특정 그룹에 속한 키워드만 필터링

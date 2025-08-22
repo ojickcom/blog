@@ -2,20 +2,34 @@
 
 {% block title %}{{ list_title }}{% endblock %}
 
-{# static 태그를 사용하기 위해 로드 #}
 {% load static %}
 {% block extra_head %}
-{# blog 앱의 static 폴더 안에 있는 style.css 파일을 연결합니다. #}
 <link rel="stylesheet" href="{% static 'blog/style.css' %}">
 {% endblock %}
 
 
 {% block content %}
 <div class="container mt-1">
-    <div class="d-flex justify-content-between mb-1">
+    <div class="d-flex justify-content-between mb-3">
+        {# 좌측 버튼 그룹 #}
         <div>
             <a href="{% url 'blog_write' %}" class="btn btn-primary me-2">새 블로그 작성</a>
             <a href="{% url 'blog_list_completed' %}" class="btn btn-info">작성 완료된 글 보기</a>
+        </div>
+        
+        {# 우측 클라이언트 필터링 폼 (새로 추가) #}
+        <div class="d-flex align-items-center">
+            <form method="GET" action="" id="clientFilterForm" class="d-flex align-items-center">
+                <label for="client-select" class="form-label me-2 mb-0">거래처:</label>
+                <select name="client" id="client-select" class="form-select" onchange="this.form.submit()">
+                    <option value="">모든 거래처</option>
+                    {% for client_name in available_clients %}
+                        <option value="{{ client_name }}" {% if client_name == selected_client_name %}selected{% endif %}>
+                            {{ client_name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </form>
         </div>
     </div>
 
