@@ -43,7 +43,13 @@ def blog_list_completed(request):
 
 @login_required
 def blog_list_pending(request):
-    blogs_pending = Blog.objects.filter(blog_write=False).select_related('client').order_by('-written_date')
+    """블로그 목록 페이지 - blog_write가 False인 작성 대기 중인 글만 표시 + 클라이언트 필터링"""
+    # URL 쿼리 파라미터에서 선택된 클라이언트 이름 가져오기
+    selected_client_name = request.GET.get('client')
+
+    # 기본 쿼리: 작성 대기 중인 모든 블로그 글
+    blogs_query = Blog.objects.filter(blog_write=False).select_related('client')
+    
     # 만약 특정 클라이언트가 선택되었다면, 해당 클라이언트의 글만 필터링
     if selected_client_name:
         blogs_query = blogs_query.filter(client__name=selected_client_name)
