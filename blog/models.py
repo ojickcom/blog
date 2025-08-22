@@ -18,13 +18,15 @@ class Client(models.Model):
     image_url = models.CharField(max_length=500, blank=True, null=True)# 클라이언트 이미지 URL 추가
     payment_amount = models.IntegerField(default=0, verbose_name="결재금액")
     is_completed = models.BooleanField(default=False, verbose_name="완성여부")
-
+    created_at = models.DateTimeField(default=timezone.now, verbose_name="생성일")
+    
     def __str__(self):
         return self.name
     
     class Meta:
         verbose_name = "클라이언트"
         verbose_name_plural = "클라이언트"
+        ordering = ['-created_at'] 
 
 # 제목 구성 요소 모델들 (변경 없음)
 class ContentSubhead(models.Model):
