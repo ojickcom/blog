@@ -10,23 +10,6 @@
 
 {% block content %}
 <div class="container mt-4"> {# <--- 이 div를 추가합니다. #}
-
-    {# 키워드 그룹 필터링 버튼들 #}
-    <div class="d-flex flex-wrap ms-2 gap-1 mb-3">
-        {# "전체" 버튼 #}
-        <a href="{% url 'shopping_keyword_click_list' %}"
-           class="btn btn-outline-secondary btn-sm {% if not selected_group_name %}active{% endif %}">
-            전체
-        </a>
-        {# 각 키워드 그룹별 버튼 #}
-        {% for group_name in available_groups %}
-            <a href="?group={{ group_name }}"
-               class="btn btn-outline-primary btn-sm {% if group_name == selected_group_name %}active{% endif %}">
-                {{ group_name }}
-            </a>
-        {% endfor %}
-    </div>
-
     {% if keywords %} {# 'keywords' 변수로 이름 변경 #}
     {# row-cols-auto 를 고려하여 유연성 확보. 필요하다면 row-cols-5 유지 #}
     <div class="row row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 g-2"> 
