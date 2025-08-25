@@ -12,22 +12,6 @@
 {# 기존의 <div class="list-completed"> 와 중첩된 <div class="container mt-4">를 제거하고, #}
 {# 모든 콘텐츠가 base.html의 .container 안에 놓이도록 합니다. #}
 {# 필터링 버튼과 카드 목록이 동일한 부모 컨테이너 아래에 있게 됩니다. #}
-    {# 클라이언트 필터링 버튼들 #}
-    <div class="d-flex flex-wrap ms-2 gap-1 mb-1 mt-1"> {# mt-4 추가: base.html의 container가 없던 자리에 top 마진 추가 #}
-        {# "전체" 버튼 #}
-        <a href="{% url request.resolver_match.url_name %}" 
-           class="btn btn-outline-secondary btn-sm {% if not selected_client_name %}active{% endif %}">
-            전체
-        </a>
-        {# 각 클라이언트별 버튼 #}
-        {% for client_name in available_clients %}
-            <a href="?client={{ client_name }}" 
-               class="btn btn-outline-primary btn-sm {% if client_name == selected_client_name %}active{% endif %}">
-                {{ client_name }}
-            </a>
-        {% endfor %}
-    </div>
-
     {% if blogs %}
     {# row-cols-5 g-2 유지 또는 반응형으로 변경 가능 (shopping_keyword_click_list처럼) #}
     <div class="row row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 g-2"> 
