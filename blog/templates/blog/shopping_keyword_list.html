@@ -21,12 +21,27 @@
 
     <div class="d-flex justify-content-between align-items-center mb-1">
         <h1 class="h3">쇼핑 키워드 목록</h1>
-                    <a href="{% url 'shopping_keyword_click_list' %}" class="btn btn-info ms-2">클릭용 키워드 보기</a>
-        <div class="btn-group">
-            <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#addSubKeywordModal">
-                <i class="bi bi-plus-circle me-1"></i> 하위 키워드 추가
-            </button>
-            <a href="{% url 'shopping_keyword_input' %}" class="btn btn-primary ms-2">새 메인 키워드 생성</a>
+        <div class="d-flex align-items-center">
+            <a href="{% url 'shopping_keyword_click_list' %}" class="btn btn-info ms-2">클릭용 키워드 보기</a>
+            
+            <div class="dropdown ms-2">
+                <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                    그룹별 보기
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                    <li><a class="dropdown-item {% if not selected_group_name %}active{% endif %}" href="{% url 'shopping_keyword_list' %}">전체</a></li>
+                    {% for group in available_groups %}
+                    <li><a class="dropdown-item {% if selected_group_name == group.name %}active{% endif %}" href="{% url 'shopping_keyword_list' %}?group={{ group.name }}">{{ group.name }}</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+            
+            <div class="btn-group ms-2">
+                <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#addSubKeywordModal">
+                    <i class="bi bi-plus-circle me-1"></i> 하위 키워드 추가
+                </button>
+                <a href="{% url 'shopping_keyword_input' %}" class="btn btn-primary ms-2">새 메인 키워드 생성</a>
+            </div>
         </div>
     </div>
 

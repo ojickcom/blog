@@ -172,7 +172,21 @@ def blog_complete(request, pk):
     
 @login_required
 def shopping_keyword_list(request):
-    keywords = ShoppingKeyword.objects.select_related('client', 'main_keyword').prefetch_related('sub_keywords', 'clicks', 'groups').order_by(
+    # URL 쿼리 파라미터에서 선택된 그룹 이름 가져오기
+    selected_group_name = request.GET.get('group')
+
+    # 키워드 그룹 목록을 가져와 템플릿에 전달
+    available_groups = KeywordGroup.objects.all().order_by('name')
+
+    # 키워드 쿼리셋 기본 설정
+    keywords_query = ShoppingKeyword.objects.select_related('client', 'main_keyword').prefetch_related('sub_keywords', 'clicks', 'groups')
+
+    # 선택된 그룹이 있다면 해당 그룹에 속한 키워드만 필터링
+    if selected_group_name:
+        keywords_query = keywords_query.filter(groups__name=selected_group_name)
+
+    # 정렬 순서 정의 (메인 키워드 우선, 서브 키워드 후순위)
+    keywords = keywords_query.order_by(
         'client__name',
         Case(
             When(main_keyword__isnull=True, then=Value(0)),
@@ -194,6 +208,8 @@ def shopping_keyword_list(request):
         keyword_obj.daily_clicks_display = [
             click_data_map.get((keyword_obj.id, d), 0) for d in date_range
         ]
+        # 이 부분은 현재 템플릿에서 사용되지 않지만, 기존 로직을 유지합니다.
+        keyword_obj.is_main_keyword = (keyword_obj.main_keyword is None) 
         keyword_obj.is_click_target = True 
 
     sub_keyword_add_form = SubKeywordAddForm()
@@ -204,9 +220,10 @@ def shopping_keyword_list(request):
         'date_range': date_range,
         'colspan_count': 6 + len(date_range),
         'sub_keyword_add_form': sub_keyword_add_form,
+        'available_groups': available_groups, # 추가: 템플릿에 그룹 목록 전달
+        'selected_group_name': selected_group_name, # 추가: 현재 선택된 그룹명 전달
     }
     return render(request, 'blog/shopping_keyword_list.html', context)
-
 @login_required
 def shopping_keyword_edit(request, pk):
     keyword = get_object_or_404(ShoppingKeyword, pk=pk)
