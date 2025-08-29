@@ -208,8 +208,6 @@ def shopping_keyword_list(request):
         keyword_obj.daily_clicks_display = [
             click_data_map.get((keyword_obj.id, d), 0) for d in date_range
         ]
-        # 이 부분은 현재 템플릿에서 사용되지 않지만, 기존 로직을 유지합니다.
-        keyword_obj.is_main_keyword = (keyword_obj.main_keyword is None) 
         keyword_obj.is_click_target = True 
 
     sub_keyword_add_form = SubKeywordAddForm()
