@@ -172,26 +172,28 @@ def blog_complete(request, pk):
     
 @login_required
 def shopping_keyword_list(request):
-    # URL 쿼리 파라미터에서 선택된 그룹 이름 가져오기
     selected_group_name = request.GET.get('group')
+    selected_client_name = request.GET.get('client') # 클라이언트 이름 가져오기
 
-    # 키워드 그룹 목록을 가져와 템플릿에 전달
     available_groups = KeywordGroup.objects.all().order_by('name')
+    available_clients = Client.objects.all().order_by('name') # 모든 클라이언트 목록 가져오기
 
-    # 키워드 쿼리셋 기본 설정
     keywords_query = ShoppingKeyword.objects.select_related('client', 'main_keyword').prefetch_related('sub_keywords', 'clicks', 'groups')
 
-    # 선택된 그룹이 있다면 해당 그룹에 속한 키워드만 필터링
+    # 그룹 필터링
     if selected_group_name:
         keywords_query = keywords_query.filter(groups__name=selected_group_name)
 
-    # 정렬 순서 정의 (메인 키워드 우선, 서브 키워드 후순위)
+    # 클라이언트 필터링 추가
+    if selected_client_name:
+        keywords_query = keywords_query.filter(client__name=selected_client_name)
+
     keywords = keywords_query.order_by(
         'client__name',
         Case(
             When(main_keyword__isnull=True, then=Value(0)),
             default=Value(1),
-            output_field=models.IntegerField()
+            output_field=IntegerField()
         ),
         'keyword'
     )
@@ -218,8 +220,10 @@ def shopping_keyword_list(request):
         'date_range': date_range,
         'colspan_count': 6 + len(date_range),
         'sub_keyword_add_form': sub_keyword_add_form,
-        'available_groups': available_groups, # 추가: 템플릿에 그룹 목록 전달
-        'selected_group_name': selected_group_name, # 추가: 현재 선택된 그룹명 전달
+        'available_groups': available_groups,
+        'selected_group_name': selected_group_name,
+        'available_clients': available_clients, # 추가: 클라이언트 목록 전달
+        'selected_client_name': selected_client_name, # 추가: 선택된 클라이언트명 전달
     }
     return render(request, 'blog/shopping_keyword_list.html', context)
 @login_required

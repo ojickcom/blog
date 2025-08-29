@@ -25,13 +25,25 @@
             <a href="{% url 'shopping_keyword_click_list' %}" class="btn btn-info ms-2">클릭용 키워드 보기</a>
             
             <div class="dropdown ms-2">
-                <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                <button class="btn btn-secondary dropdown-toggle" type="button" id="groupDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                     그룹별 보기
                 </button>
-                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                    <li><a class="dropdown-item {% if not selected_group_name %}active{% endif %}" href="{% url 'shopping_keyword_list' %}">전체</a></li>
+                <ul class="dropdown-menu" aria-labelledby="groupDropdown">
+                    <li><a class="dropdown-item {% if not selected_group_name and not selected_client_name %}active{% endif %}" href="{% url 'shopping_keyword_list' %}">전체</a></li>
                     {% for group in available_groups %}
-                    <li><a class="dropdown-item {% if selected_group_name == group.name %}active{% endif %}" href="{% url 'shopping_keyword_list' %}?group={{ group.name }}">{{ group.name }}</a></li>
+                    <li><a class="dropdown-item {% if selected_group_name == group.name %}active{% endif %}" href="{% url 'shopping_keyword_list' %}?group={{ group.name }}{% if selected_client_name %}&client={{ selected_client_name }}{% endif %}">{{ group.name }}</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+            
+            <div class="dropdown ms-2">
+                <button class="btn btn-secondary dropdown-toggle" type="button" id="clientDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    거래처별 보기
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="clientDropdown">
+                    <li><a class="dropdown-item {% if not selected_client_name and not selected_group_name %}active{% endif %}" href="{% url 'shopping_keyword_list' %}">전체</a></li>
+                    {% for client in available_clients %}
+                    <li><a class="dropdown-item {% if selected_client_name == client.name %}active{% endif %}" href="{% url 'shopping_keyword_list' %}?client={{ client.name }}{% if selected_group_name %}&group={{ selected_group_name }}{% endif %}">{{ client.name }}</a></li>
                     {% endfor %}
                 </ul>
             </div>
@@ -63,7 +75,7 @@
                     </thead>
                     <tbody>
                         {% for keyword in keywords %}
-                        <tr {% if keyword.is_main_keyword %}class="table-primary"{% endif %}>
+                        <tr {% if not keyword.main_keyword %}class="table-primary"{% endif %}>
                             <td>{{ keyword.client.name }}</td>
                             <td>
                                 {% if keyword.main_keyword %}
