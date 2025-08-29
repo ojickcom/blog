@@ -5,7 +5,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 from django.db.models import F, Case, When, Value, BooleanField # Case, When, Value, BooleanField 임포트
 from datetime import date, timedelta
-from django.db.models import OuterRef, Subquery, Sum
+from django.db.models import OuterRef, Subquery, Sum, IntegerField
 from .models import Blog, Client, ContentSubhead, NumberCharacter, TalkStyle, ContentAspect, ShoppingKeyword, KeywordClick, Expense, KeywordGroup
 from .forms import BlogForm, SubKeywordAddForm, MainKeywordNameUpdateForm,MainKeywordInitialAddForm
 import random
