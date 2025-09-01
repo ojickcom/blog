@@ -12,6 +12,7 @@ import random
 from datetime import datetime
 from django.contrib import messages
 from django.db import models
+from django.utils import timezone
 
 # blog_list를 completed와 pending을 함께 보여주는 대시보드 형태로 변경하거나,
 # 두 개의 개별 뷰로 분리할 수 있습니다. 여기서는 두 개의 개별 뷰를 제공합니다.
@@ -164,6 +165,7 @@ def blog_complete(request, pk):
     """블로그 글작성 완료 처리 뷰"""
     try:
         blog = get_object_or_404(Blog, pk=pk)
+        blog.written_date = timezone.now() 
         blog.blog_write = True
         blog.save()
         return JsonResponse({'status': 'success', 'message': '글작성이 완료되었습니다.'})
