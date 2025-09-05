@@ -9,7 +9,43 @@
 {% endblock %}
 
 {% block content %}
-<div style="height: 35px;"> 1</div>
+<div style="height: 35px;"></div>
+
+<!-- 클라이언트 필터 (기존에 있었다면 여기에 추가) -->
+{% if available_clients %}
+<div class="mb-3">
+    <form method="get" class="row g-2 align-items-center">
+        <div class="col-auto">
+            <label for="client-select" class="form-label">클라이언트 필터:</label>
+        </div>
+        <div class="col-auto">
+            <select name="client" id="client-select" class="form-select" onchange="this.form.submit()">
+                <option value="">전체</option>
+                {% for client in available_clients %}
+                    <option value="{{ client }}" {% if selected_client_name == client %}selected{% endif %}>
+                        {{ client }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <input type="hidden" name="page" value="1"> <!-- 필터 변경시 첫 페이지로 -->
+    </form>
+</div>
+{% endif %}
+
+<!-- 현재 페이지 정보 -->
+{% if page_obj %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="text-muted">
+        총 {{ page_obj.paginator.count }}개 중 
+        {{ page_obj.start_index }}-{{ page_obj.end_index }}번째 표시
+    </div>
+    <div class="text-muted">
+        {{ page_obj.number }} / {{ page_obj.paginator.num_pages }} 페이지
+    </div>
+</div>
+{% endif %}
+
     {% if blogs %}
     {# row-cols-5 g-2 유지 또는 반응형으로 변경 가능 (shopping_keyword_click_list처럼) #}
     <div class="row row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 g-2"> 
@@ -31,12 +67,76 @@
                             📋 복사
                         </button>
                     </div>
-
                 </div>
             </div>
         </div>
         {% endfor %}
     </div>
+    
+    <!-- 페이지네이션 UI -->
+    {% if page_obj %}
+    <nav aria-label="페이지 네비게이션" class="mt-4">
+        <ul class="pagination justify-content-center">
+            <!-- 첫 페이지 링크 -->
+            {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% if selected_client_name %}&client={{ selected_client_name }}{% endif %}" aria-label="첫 페이지">
+                        <span aria-hidden="true">&laquo;&laquo;</span>
+                    </a>
+                </li>
+                <!-- 이전 페이지 링크 -->
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if selected_client_name %}&client={{ selected_client_name }}{% endif %}" aria-label="이전 페이지">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link" aria-hidden="true">&laquo;&laquo;</span>
+                </li>
+                <li class="page-item disabled">
+                    <span class="page-link" aria-hidden="true">&laquo;</span>
+                </li>
+            {% endif %}
+
+            <!-- 페이지 번호들 -->
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% if selected_client_name %}&client={{ selected_client_name }}{% endif %}">{{ num }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+
+            <!-- 다음 페이지 링크 -->
+            {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if selected_client_name %}&client={{ selected_client_name }}{% endif %}" aria-label="다음 페이지">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+                <!-- 마지막 페이지 링크 -->
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if selected_client_name %}&client={{ selected_client_name }}{% endif %}" aria-label="마지막 페이지">
+                        <span aria-hidden="true">&raquo;&raquo;</span>
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link" aria-hidden="true">&raquo;</span>
+                </li>
+                <li class="page-item disabled">
+                    <span class="page-link" aria-hidden="true">&raquo;&raquo;</span>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+    
     {% else %}
     <p class="alert alert-info">블로그 글이 없습니다.</p>
     {% endif %}

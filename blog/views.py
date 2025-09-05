@@ -17,12 +17,16 @@ from django.utils import timezone
 # blog_list를 completed와 pending을 함께 보여주는 대시보드 형태로 변경하거나,
 # 두 개의 개별 뷰로 분리할 수 있습니다. 여기서는 두 개의 개별 뷰를 제공합니다.
 
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+
 @login_required
 def blog_list_completed(request):
-    """작성 완료된 글 + 클라이언트 필터링"""
+    """작성 완료된 글 + 클라이언트 필터링 + 페이지네이션"""
     # URL에서 클라이언트 이름 파라미터 받기
     selected_client_name = request.GET.get('client')
-
+    
     blogs_query = Blog.objects.filter(blog_write=True).select_related('client')
     
     # 선택된 클라이언트가 있다면 해당 클라이언트의 블로그 글만 필터링
@@ -31,15 +35,28 @@ def blog_list_completed(request):
     
     blogs_completed = blogs_query.order_by('-written_date')
 
+    # 페이지네이션 설정 (한 페이지에 60개 항목)
+    paginator = Paginator(blogs_completed, 60)
+    page_number = request.GET.get('page')
+    
+    try:
+        page_obj = paginator.get_page(page_number)
+    except PageNotAnInteger:
+        # 페이지가 정수가 아니면 첫 번째 페이지 반환
+        page_obj = paginator.get_page(1)
+    except EmptyPage:
+        # 페이지가 범위를 벗어나면 마지막 페이지 반환
+        page_obj = paginator.get_page(paginator.num_pages)
+
     # 모든 클라이언트 이름 목록을 가져오기
-    # `Client` 모델에서 `name` 필드의 고유한 값들을 가져옵니다.
     available_clients = Client.objects.values_list('name', flat=True).distinct().order_by('name')
 
     return render(request, 'blog/list_completed.html', {
-        'blogs': blogs_completed,
+        'blogs': page_obj.object_list,  # 현재 페이지의 블로그 글들
+        'page_obj': page_obj,           # 페이지 객체 (페이지네이션 정보 포함)
         'list_title': '트래픽 용도 글',
-        'available_clients': available_clients, # 추가: 모든 클라이언트 이름 전달
-        'selected_client_name': selected_client_name, # 추가: 현재 선택된 클라이언트 이름 전달
+        'available_clients': available_clients,
+        'selected_client_name': selected_client_name,
     })
 
 @login_required
@@ -269,8 +286,6 @@ def create_sub_keyword_ajax(request):
 
                 return JsonResponse({'status': 'success', 'message': '하위 키워드가 성공적으로 추가되었습니다.'})
             except Exception as e:
-                # 트랜잭션 사용은 ModelForm.save()가 내부적으로 처리하므로, 여기서는 별도로 명시할 필요는 없습니다.
-                # 하지만 데이터베이스 관련 예외를 처리하는 것은 좋은 습관입니다.
                 return JsonResponse({'status': 'error', 'message': f'데이터 저장 중 오류가 발생했습니다: {e}'}, status=500)
         else:
             # 폼 유효성 검사 실패 시
@@ -293,7 +308,6 @@ def shopping_keyword_input(request):
             except Exception as e:
                 messages.error(request, f'메인 키워드 생성 중 오류가 발생했습니다: {e}')
         else:
-            # --- 이 부분을 수정합니다 ---
             # 폼 전체 오류 메시지 처리
             if '__all__' in form.errors:
                 for error in form.errors['__all__']:
