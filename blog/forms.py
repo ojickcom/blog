@@ -21,7 +21,7 @@ class BlogForm(forms.ModelForm):
             }),
             'content': forms.Textarea(attrs={
                 'class': 'form-control',
-                'rows': 600,
+                'rows': 40,
                 'placeholder': '1000자 이상의 내용을 입력하세요'
             }),
         }
