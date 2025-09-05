@@ -224,3 +224,50 @@ class Expense(models.Model):
     class Meta:
         verbose_name = "비용"
         verbose_name_plural = "비용"
+
+def save(self, *args, **kwargs):
+    # title이 비어있으면 랜덤으로 생성
+    if not self.title:
+        subhead_qs = ContentSubhead.objects.all()
+        char_qs = NumberCharacter.objects.all()
+        talk_qs = TalkStyle.objects.all()
+        aspect_qs = ContentAspect.objects.all()
+
+        # 클라이언트가 지정된 경우 해당 클라이언트의 subhead만 사용
+        if self.client:
+            client_subhead_qs = ContentSubhead.objects.filter(client=self.client)
+            if client_subhead_qs.exists():
+                subhead_qs = client_subhead_qs
+        
+        subhead = random.choice(subhead_qs).name if subhead_qs.exists() else "랜덤 주제"
+        character = random.choice(char_qs).name if char_qs.exists() else "랜덤 글자수"
+        talkstyle = random.choice(talk_qs).name if talk_qs.exists() else "랜덤 어투"
+        aspect = random.choice(aspect_qs).name if aspect_qs.exists() else "랜덤 대상"
+
+        self.title = f"{subhead} {character} {talkstyle} {aspect}"
+        
+    # --- b_title 유효성 검사 및 중복 확인 ---
+    if self.b_title: # b_title 값이 있을 때만 검사를 수행합니다.
+        
+        # 1. "글 작성:" 문구가 포함된 제목 저장 방지
+        if "글 작성:" in self.b_title:
+            print(f"[{timezone.now()}] B_제목에 '글 작성:'이 포함되어 저장을 건너뜀: '{self.b_title}'")
+            return  # 저장하지 않고 함수 종료
+        
+        # 2. 중복 제목 확인 및 저장 방지 로직
+        # 현재 저장하려는 객체(self)를 제외하고, b_title이 같은 다른 블로그들을 찾습니다.
+        existing_duplicates = Blog.objects.filter(b_title=self.b_title)
+        
+        # 만약 현재 객체가 이미 DB에 있는 경우 (즉, 기존 블로그를 수정하는 경우)
+        # 자기 자신은 중복 검사 대상에서 제외합니다.
+        if self.pk:
+            existing_duplicates = existing_duplicates.exclude(pk=self.pk)
+
+        # 중복된 블로그가 발견되면 저장하지 않고 함수를 종료합니다.
+        if existing_duplicates.exists():
+            print(f"[{timezone.now()}] B_제목 '{self.b_title}'이(가) 이미 존재하여 저장을 건너뜜.")
+            return  # 저장하지 않고 함수 종료
+    # ------------------------------------------------------------------
+        
+    # 3. 모든 검사를 통과하면 현재 Blog 인스턴스 저장
+    super().save(*args, **kwargs)
