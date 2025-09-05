@@ -110,7 +110,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const talkstyle = displayTalkstyle.textContent;
         const client = clientSelect.options[clientSelect.selectedIndex].text; 
 
-        const textToCopy = `글 주제: ${subhead}\n글자수: ${character}\n글어투: ${talkstyle}\n 글내용: ${client}을 글 내용에 한 번 언급하고, 제목과 내용에 특수문자와 *,#를 넣지 말고, 컨텐츠 첫줄은 제목으로 12단어 이상의 제목, 그리고 글 주제에서 약한 키워드를 하나 더 추가해서 최상단에 적고, 블로그 포스팅용 글로 검색자의 의도를 파악해서 적어줘. `;
+        const textToCopy = `글 주제: ${subhead}\n글자수: ${character}\n글어투: ${talkstyle}\n 글내용: ${client}을 글 내용에 한 번 언급하고, 제목과 내용에 특수문자, *,#를 넣지 말고, 내용의 제일 첫줄은 제목으로 10단어 이상, 그리고 글 주제에서 약한 키워드를 하나 더 추가해서 제목에 넣고, 글 내용은 블로그 포스팅용도로 검색자의 의도를 파악해서 적어줘. `;
 
         const tempTextArea = document.createElement('textarea');
         tempTextArea.value = textToCopy;
