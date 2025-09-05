@@ -36,7 +36,7 @@ def blog_list_completed(request):
     blogs_completed = blogs_query.order_by('-written_date')
 
     # 페이지네이션 설정 (한 페이지에 60개 항목)
-    paginator = Paginator(blogs_completed, 60)
+    paginator = Paginator(blogs_completed, 50)
     page_number = request.GET.get('page')
     
     try:
