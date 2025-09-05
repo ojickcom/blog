@@ -10,6 +10,42 @@
 
 {% block content %}
 <div style="height: 35px;"></div>
+
+<!-- 클라이언트 필터 (기존에 있었다면 여기에 추가) -->
+{% if available_clients %}
+<div class="mb-3">
+    <form method="get" class="row g-2 align-items-center">
+        <div class="col-auto">
+            <label for="client-select" class="form-label">클라이언트 필터:</label>
+        </div>
+        <div class="col-auto">
+            <select name="client" id="client-select" class="form-select" onchange="this.form.submit()">
+                <option value="">전체</option>
+                {% for client in available_clients %}
+                    <option value="{{ client }}" {% if selected_client_name == client %}selected{% endif %}>
+                        {{ client }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <input type="hidden" name="page" value="1"> <!-- 필터 변경시 첫 페이지로 -->
+    </form>
+</div>
+{% endif %}
+
+<!-- 현재 페이지 정보 -->
+{% if page_obj %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="text-muted">
+        총 {{ page_obj.paginator.count }}개 중 
+        {{ page_obj.start_index }}-{{ page_obj.end_index }}번째 표시
+    </div>
+    <div class="text-muted">
+        {{ page_obj.number }} / {{ page_obj.paginator.num_pages }} 페이지
+    </div>
+</div>
+{% endif %}
+
     {% if blogs %}
     {# row-cols-5 g-2 유지 또는 반응형으로 변경 가능 (shopping_keyword_click_list처럼) #}
     <div class="row row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 g-2"> 
@@ -63,13 +99,24 @@
                 </li>
             {% endif %}
 
-            <!-- 페이지 번호들 -->
+            <!-- 페이지 번호들 (항상 3개) -->
             {% for num in page_obj.paginator.page_range %}
                 {% if page_obj.number == num %}
                     <li class="page-item active">
                         <span class="page-link">{{ num }}</span>
                     </li>
-                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                {% elif page_obj.number <= 2 and num <= 3 %}
+                    <!-- 현재 페이지가 1-2페이지일 때는 1,2,3 표시 -->
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% if selected_client_name %}&client={{ selected_client_name }}{% endif %}">{{ num }}</a>
+                    </li>
+                {% elif page_obj.number >= page_obj.paginator.num_pages|add:'-1' and num >= page_obj.paginator.num_pages|add:'-2' %}
+                    <!-- 현재 페이지가 마지막에서 1-2번째일 때는 끝에서 3개 표시 -->
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% if selected_client_name %}&client={{ selected_client_name }}{% endif %}">{{ num }}</a>
+                    </li>
+                {% elif num >= page_obj.number|add:'-1' and num <= page_obj.number|add:'1' %}
+                    <!-- 그 외의 경우는 현재 페이지 중심으로 3개 -->
                     <li class="page-item">
                         <a class="page-link" href="?page={{ num }}{% if selected_client_name %}&client={{ selected_client_name }}{% endif %}">{{ num }}</a>
                     </li>
