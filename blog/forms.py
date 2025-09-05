@@ -39,8 +39,8 @@ class BlogForm(forms.ModelForm):
 
     def clean_content(self):
         content = self.cleaned_data['content']
-        if len(content) < 50:
-            raise forms.ValidationError('내용은 50자 이상이어야 합니다.')
+        if len(content) < 400:
+            raise forms.ValidationError('내용은 400자 이상이어야 합니다.')
         return content
 
 # SubKeywordAddForm: 기존 메인 키워드에 하위 키워드를 연결 (모달용)
