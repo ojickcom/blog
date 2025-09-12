@@ -52,6 +52,7 @@
         <button type="button" id="copy-title-button" class="btn btn-sm btn-info mt-3">
             📋 제목 조합 복사하기 <span id="copy-feedback" class="ms-2" style="display: none;">(복사됨!)</span>
         </button>
+            <button type="submit" class="btn btn-success mt-3">저장하기</button>
     </div>
     <div class="mb-3">
         <label for="{{ form.content.id_for_label }}" class="form-label">{{ form.content.label }}</label>
@@ -63,7 +64,7 @@
         {% endif %}
     </div>
 
-    <button type="submit" class="btn btn-success mt-3">저장하기</button>
+
 </form>
 
 <script>
