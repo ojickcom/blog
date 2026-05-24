@@ -132,19 +132,21 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Function to get last 5 words from a string
-    function getLastFiveWords(text) {
+    // 제목의 첫 두 단어를 제외하고 나머지를 표시
+    function getTitleWithoutFirstTwoWords(text) {
         const words = text.trim().split(/\s+/);
-        return words.slice(-5).join(' ');
+        if (words.length <= 2) {
+            return text.trim();
+        }
+        return words.slice(2).join(' ');
     }
 
-    // Process all blog titles to show only last 5 words
+    // 완료 글 제목 표시 규칙 적용
     const titleElements = document.querySelectorAll('[id^="blog-title-"]');
     titleElements.forEach(element => {
         const fullTitle = element.dataset.fullTitle;
         if (fullTitle) {
-            const lastFiveWords = getLastFiveWords(fullTitle);
-            element.textContent = lastFiveWords;
+            element.textContent = getTitleWithoutFirstTwoWords(fullTitle);
         }
     });
 

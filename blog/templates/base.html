@@ -104,6 +104,9 @@
             display: -webkit-box;
             -webkit-box-orient: vertical;
         }
+        .copy-success-text {
+            word-break: break-all;
+        }
     </style>
 </head>
 <body>
@@ -131,7 +134,88 @@
     <footer class="bg-light text-center py-3 mt-5">
         <p class="mb-0">&copy; 2025 블로그. All rights reserved.</p>
     </footer>
+
+    <div class="modal fade" id="globalCopySuccessModal" tabindex="-1" aria-labelledby="globalCopySuccessModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="globalCopySuccessModalLabel">복사 완료</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <p class="mb-2">✅ 항목이 성공적으로 복사되었습니다.</p>
+                    <strong id="globalCopiedText" class="copy-success-text"></strong>
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">확인</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTFyMGUHv+azPRcahT" crossorigin="anonymous"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const copyModalElement = document.getElementById('globalCopySuccessModal');
+            const copiedTextElement = document.getElementById('globalCopiedText');
+            const copyModal = copyModalElement ? new bootstrap.Modal(copyModalElement) : null;
+
+            window.showCopySuccessModal = function(text, autoHideMs) {
+                if (!copyModal || !copiedTextElement) {
+                    return;
+                }
+
+                copiedTextElement.textContent = text ? `"${text}"` : '';
+                copyModal.show();
+
+                if (autoHideMs) {
+                    setTimeout(() => {
+                        copyModal.hide();
+                    }, autoHideMs);
+                }
+            };
+
+            window.copyTextWithFeedback = function(text, options) {
+                const settings = Object.assign({
+                    errorMessage: '복사에 실패했습니다.',
+                    autoHideMs: 2000,
+                    onSuccess: null,
+                }, options || {});
+
+                const handleSuccess = function() {
+                    window.showCopySuccessModal(text, settings.autoHideMs);
+                    if (typeof settings.onSuccess === 'function') {
+                        settings.onSuccess();
+                    }
+                };
+
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    return navigator.clipboard.writeText(text).then(handleSuccess).catch(function(error) {
+                        alert(settings.errorMessage);
+                        throw error;
+                    });
+                }
+
+                return new Promise(function(resolve, reject) {
+                    const textArea = document.createElement('textarea');
+                    textArea.value = text;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+
+                    try {
+                        document.execCommand('copy');
+                        handleSuccess();
+                        resolve();
+                    } catch (error) {
+                        alert(settings.errorMessage);
+                        reject(error);
+                    } finally {
+                        document.body.removeChild(textArea);
+                    }
+                });
+            };
+        });
+    </script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>

@@ -69,37 +69,14 @@
     {# 여기서는 콘텐츠와 관련된 부분이므로 컨테이너 안에 유지하는 것이 나쁘지 않습니다. #}
 </div> {# <--- 이 닫는 div를 추가합니다. #}
 
-
-<div class="modal fade" id="copySuccessModal" tabindex="-1" aria-labelledby="copySuccessModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-sm">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="copySuccessModalLabel">복사 완료</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body text-center">
-        <p class="mb-0">✅ 키워드가 성공적으로 복사되었습니다!</p>
-        <strong id="copiedKeywordText"></strong>
-      </div>
-      <div class="modal-footer justify-content-center">
-        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">확인</button>
-      </div>
-    </div>
-  </div>
-</div>
-
 <script>
-// JavaScript 코드는 변경할 필요 없습니다.
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize tooltips (requires Bootstrap JS and Popper.js)
     var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
     var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
       return new bootstrap.Tooltip(tooltipTriggerEl);
     });
 
     const copyButtons = document.querySelectorAll('.copy-btn');
-    const copySuccessModal = new bootstrap.Modal(document.getElementById('copySuccessModal'));
-    const copiedKeywordTextElement = document.getElementById('copiedKeywordText');
 
     copyButtons.forEach(button => {
         button.addEventListener('click', function() {
@@ -108,43 +85,12 @@ document.addEventListener('DOMContentLoaded', function() {
             const keywordToCopy = keywordElement ? keywordElement.textContent : '';
 
             if (keywordToCopy) {
-                if (navigator.clipboard && navigator.clipboard.writeText) {
-                    navigator.clipboard.writeText(keywordToCopy).then(() => {
-                        // Update modal content and show modal
-                        copiedKeywordTextElement.textContent = `"${keywordToCopy}"`;
-                        copySuccessModal.show();
-
-                        // Optionally, hide modal after a few seconds
-                        setTimeout(() => {
-                            copySuccessModal.hide();
-                        }, 2000); // Hide after 2 seconds
-                    }).catch(err => {
-                        console.error('Failed to copy text: ', err);
-                        alert('키워드 복사에 실패했습니다.');
-                    });
-                } else {
-                    // Fallback for older browsers
-                    const textArea = document.createElement('textarea');
-                    textArea.value = keywordToCopy;
-                    document.body.appendChild(textArea);
-                    textArea.select();
-                    try {
-                        document.execCommand('copy');
-                        // Update modal content and show modal
-                        copiedKeywordTextElement.textContent = `"${keywordToCopy}"`;
-                        copySuccessModal.show();
-
-                        // Optionally, hide modal after a few seconds
-                        setTimeout(() => {
-                            copySuccessModal.hide();
-                        }, 2000); // Hide after 2 seconds
-                    } catch (err) {
-                        console.error('Fallback: Failed to copy text: ', err);
-                        alert('키워드 복사에 실패했습니다.');
-                    } finally {
-                        document.body.removeChild(textArea);
-                    }
-                }
+                window.copyTextWithFeedback(keywordToCopy, {
+                    errorMessage: '키워드 복사에 실패했습니다.',
+                    autoHideMs: 2000
+                }).catch(err => {
+                    console.error('Failed to copy text: ', err);
+                });
             }
         });
     });
