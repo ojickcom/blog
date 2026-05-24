@@ -6,6 +6,14 @@
 {# CSS 파일을 연결합니다. (기존과 동일) #}
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'blog/style.css' %}">
+<style>
+    .completed-title-preview {
+        display: block;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -30,7 +38,7 @@
                     {# Title and Copy Button on one line #}
                     <div class="d-flex align-items-start title-container">
                         <h5 class="card-title compact-title flex-grow-1 mb-0 me-2">
-                            <span id="blog-title-{{ blog.pk }}" data-full-title="{{ blog.b_title }}">{{ blog.b_title }}</span>
+                            <span id="blog-title-{{ blog.pk }}" class="completed-title-preview" data-full-title="{{ blog.b_title }}" title="{{ blog.b_title }}">{{ blog.b_title }}</span>
                         </h5>
                         <button type="button"
                                 class="btn btn-sm btn-outline-secondary copy-btn text-nowrap"
@@ -162,7 +170,7 @@ document.addEventListener('DOMContentLoaded', function() {
         button.addEventListener('click', function() {
             const blogId = this.dataset.blogId;
             const titleElement = document.getElementById(`blog-title-${blogId}`);
-            const titleToCopy = titleElement ? titleElement.textContent : '';
+            const titleToCopy = titleElement ? titleElement.dataset.fullTitle : '';
 
             if (titleToCopy) {
                 // Use the modern Clipboard API
