@@ -16,6 +16,7 @@ urlpatterns = [
     path('completed/increment-copy/', views.increment_blog_copy_count, name='increment_blog_copy_count'),
     path('shopping_keywords/create_sub_keyword_ajax/', views.create_sub_keyword_ajax, name='create_sub_keyword_ajax'),
     path('shopping/keywords/', views.shopping_keyword_list, name='shopping_keyword_list'),
+    path('shopping/keywords/main/', views.shopping_main_keyword_list, name='shopping_main_keyword_list'),
     path('shopping/keywords/input/', views.shopping_keyword_input, name='shopping_keyword_input'),
     path('shopping/keywords/edit/<int:pk>/', views.shopping_keyword_edit, name='shopping_keyword_edit'),
     path('shopping_keywords/click_list/', views.shopping_keyword_click_list, name='shopping_keyword_click_list'),

@@ -23,6 +23,7 @@
             <form method="post">
                 {% csrf_token %}
                 <input type="hidden" name="return_query" value="{{ return_query }}">
+                <input type="hidden" name="return_view" value="{{ return_view }}">
                 <div class="mb-3">
                     <label for="{{ form.client.id_for_label }}" class="form-label">{{ form.client.label }}</label>
                     {{ form.client }}
@@ -70,7 +71,7 @@
                 </div>
 
                 <button type="submit" class="btn btn-primary mt-3">저장</button>
-                <a href="{% url 'shopping_keyword_list' %}{% if return_query %}?{{ return_query }}{% endif %}" class="btn btn-secondary mt-3 ms-2">목록으로 돌아가기</a>
+                <a href="{% url return_view %}{% if return_query %}?{{ return_query }}{% endif %}" class="btn btn-secondary mt-3 ms-2">목록으로 돌아가기</a>
             </form>
         </div>
     </div>

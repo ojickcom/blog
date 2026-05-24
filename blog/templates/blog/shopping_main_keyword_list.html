@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+
+{% block title %}메인 키워드 관리{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    {% if messages %}
+    <div class="messages mb-3">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
+        <div>
+            <h1 class="h3 mb-1">메인 키워드 관리</h1>
+            <p class="text-muted mb-0">메인 키워드만 따로 보고 수정합니다.</p>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{% url 'shopping_keyword_list' %}" class="btn btn-outline-secondary">서브 키워드 목록</a>
+            <a href="{% url 'shopping_keyword_input' %}" class="btn btn-primary">새 메인 키워드 생성</a>
+        </div>
+    </div>
+
+    <div class="d-flex flex-wrap gap-2 mb-3">
+        <div class="dropdown">
+            <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                그룹별 보기
+            </button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item {% if not selected_group_name and not selected_client_name %}active{% endif %}" href="{% url 'shopping_main_keyword_list' %}">전체</a></li>
+                {% for group in available_groups %}
+                <li><a class="dropdown-item {% if selected_group_name == group.name %}active{% endif %}" href="{% url 'shopping_main_keyword_list' %}?group={{ group.name }}{% if selected_client_name %}&client={{ selected_client_name }}{% endif %}">{{ group.name }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div class="dropdown">
+            <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                거래처별 보기
+            </button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item {% if not selected_client_name and not selected_group_name %}active{% endif %}" href="{% url 'shopping_main_keyword_list' %}">전체</a></li>
+                {% for client in available_clients %}
+                <li><a class="dropdown-item {% if selected_client_name == client.name %}active{% endif %}" href="{% url 'shopping_main_keyword_list' %}?client={{ client.name }}{% if selected_group_name %}&group={{ selected_group_name }}{% endif %}">{{ client.name }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col">클라이언트</th>
+                            <th scope="col">메인 키워드</th>
+                            <th scope="col">키워드 그룹</th>
+                            <th scope="col">관리</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for keyword in main_keywords %}
+                        <tr>
+                            <td>{{ keyword.client.name }}</td>
+                            <td>
+                                <a href="{% url 'shopping_keyword_detail' pk=keyword.pk %}" class="text-decoration-none fw-semibold">
+                                    {{ keyword.keyword }}
+                                </a>
+                            </td>
+                            <td>
+                                {% for group in keyword.groups.all %}
+                                <span class="badge bg-primary-subtle text-primary-emphasis me-1">{{ group.name }}</span>
+                                {% empty %}
+                                <span class="badge bg-secondary">미지정</span>
+                                {% endfor %}
+                            </td>
+                            <td>
+                                <a href="{% url 'shopping_keyword_edit' pk=keyword.pk %}?return_view=shopping_main_keyword_list{% if return_query %}&return_query={{ return_query|urlencode }}{% endif %}" class="btn btn-sm btn-info">수정</a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center">등록된 메인 키워드가 없습니다.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

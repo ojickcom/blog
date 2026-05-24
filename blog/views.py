@@ -321,17 +321,66 @@ def shopping_keyword_list(request):
         'return_query': return_query,
     }
     return render(request, 'blog/shopping_keyword_list.html', context)
+
+
+@login_required
+def shopping_main_keyword_list(request):
+    selected_group_name = request.GET.get('group')
+    selected_client_name = request.GET.get('client')
+    return_query = urlencode(
+        {
+            key: value
+            for key, value in {
+                'group': selected_group_name,
+                'client': selected_client_name,
+            }.items()
+            if value
+        }
+    )
+
+    available_groups = KeywordGroup.objects.all().order_by('name')
+    available_clients = Client.objects.all().order_by('name')
+
+    keywords_query = (
+        ShoppingKeyword.objects.select_related('client')
+        .prefetch_related('groups')
+        .filter(main_keyword__isnull=True)
+    )
+
+    if selected_group_name:
+        keywords_query = keywords_query.filter(groups__name=selected_group_name)
+
+    if selected_client_name:
+        keywords_query = keywords_query.filter(client__name=selected_client_name)
+
+    main_keywords = keywords_query.order_by('client__name', 'keyword')
+
+    return render(
+        request,
+        'blog/shopping_main_keyword_list.html',
+        {
+            'main_keywords': main_keywords,
+            'available_groups': available_groups,
+            'available_clients': available_clients,
+            'selected_group_name': selected_group_name,
+            'selected_client_name': selected_client_name,
+            'return_query': return_query,
+        },
+    )
+
+
 @login_required
 def shopping_keyword_edit(request, pk):
     keyword = get_object_or_404(ShoppingKeyword, pk=pk)
     return_query = request.GET.get('return_query') or request.POST.get('return_query') or ''
+    return_view = request.GET.get('return_view') or request.POST.get('return_view') or 'shopping_keyword_list'
 
     if request.method == 'POST':
         form = MainKeywordNameUpdateForm(request.POST, instance=keyword)
         if form.is_valid():
             form.save() # 폼의 save() 메서드 내부에서 save_m2m()이 호출됩니다.
             messages.success(request, '키워드 정보가 성공적으로 업데이트되었습니다.')
-            redirect_url = reverse('shopping_keyword_list')
+            redirect_url = reverse(return_view)
             if return_query:
                 redirect_url = f'{redirect_url}?{return_query}'
             return redirect(redirect_url)
@@ -346,6 +395,7 @@ def shopping_keyword_edit(request, pk):
         'form': form,
         'keyword': keyword,
         'return_query': return_query,
+        'return_view': return_view,
     }
     return render(request, 'blog/shopping_keyword_edit.html', context)
 
