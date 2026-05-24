@@ -1,25 +1,36 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.http import JsonResponse
-from django.views.decorators.http import require_POST
-from django.views.decorators.csrf import csrf_exempt
-from django.contrib.auth.decorators import login_required
-from django.db.models import F, Case, When, Value, BooleanField # Case, When, Value, BooleanField 임포트
-from datetime import date, timedelta
-from django.db.models import OuterRef, Subquery, Sum, IntegerField
-from .models import Blog, Client, ContentSubhead, NumberCharacter, TalkStyle, ContentAspect, ShoppingKeyword, KeywordClick, Expense, KeywordGroup
-from .forms import BlogForm, SubKeywordAddForm, MainKeywordNameUpdateForm,MainKeywordInitialAddForm
-import random
-from datetime import datetime
+from datetime import date, datetime, timedelta
+
 from django.contrib import messages
-from django.db import models
+from django.contrib.auth.decorators import login_required
+from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
+from django.db.models import Case, F, IntegerField, Sum, Value, When
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+
+from .forms import (
+    BlogForm,
+    MainKeywordInitialAddForm,
+    MainKeywordNameUpdateForm,
+    SubKeywordAddForm,
+)
+from .models import (
+    Blog,
+    Client,
+    ContentAspect,
+    ContentSubhead,
+    Expense,
+    KeywordClick,
+    KeywordGroup,
+    NumberCharacter,
+    ShoppingKeyword,
+    TalkStyle,
+)
 
 # blog_list를 completed와 pending을 함께 보여주는 대시보드 형태로 변경하거나,
 # 두 개의 개별 뷰로 분리할 수 있습니다. 여기서는 두 개의 개별 뷰를 제공합니다.
-
-from django.shortcuts import render
-from django.contrib.auth.decorators import login_required
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 @login_required
 def blog_list_completed(request):
@@ -273,28 +284,30 @@ def shopping_keyword_edit(request, pk):
 # --- AJAX를 통한 서브 키워드 생성 뷰 ---
 @login_required
 def create_sub_keyword_ajax(request):
-    if request.method == 'POST':
-        form = SubKeywordAddForm(request.POST)
-        if form.is_valid():
-            try:
-                new_sub_keyword = form.save() 
-                new_sub_keyword = form.save(commit=False) # 인스턴스만 생성
-                new_sub_keyword.created_by = request.user # 유저 할당 (모델 필드에 맞게 조정)
-                new_sub_keyword.updated_by = request.user # 유저 할당
-                new_sub_keyword.save() # 인스턴스 저장
-                form.save_m2m() # M2M 필드 저장
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': '잘못된 요청 방식'}, status=405)
 
-                return JsonResponse({'status': 'success', 'message': '하위 키워드가 성공적으로 추가되었습니다.'})
-            except Exception as e:
-                return JsonResponse({'status': 'error', 'message': f'데이터 저장 중 오류가 발생했습니다: {e}'}, status=500)
-        else:
-            # 폼 유효성 검사 실패 시
-            return JsonResponse({
+    form = SubKeywordAddForm(request.POST)
+    if not form.is_valid():
+        return JsonResponse(
+            {
                 'status': 'error',
                 'message': '유효성 검사 실패',
-                'errors': form.errors.as_json()
-            }, status=400)
-    return JsonResponse({'status': 'error', 'message': '잘못된 요청 방식'}, status=405)
+                'errors': form.errors.get_json_data(),
+            },
+            status=400,
+        )
+
+    try:
+        new_sub_keyword = form.save()
+        return JsonResponse(
+            {
+                'status': 'success',
+                'message': f"'{new_sub_keyword.keyword}' 하위 키워드가 성공적으로 추가되었습니다.",
+            }
+        )
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': f'데이터 저장 중 오류가 발생했습니다: {e}'}, status=500)
 
 @login_required
 def shopping_keyword_input(request):
@@ -340,12 +353,20 @@ def shopping_keyword_delete(request, pk):
 def shopping_keyword_click_page(request):
     """
     클릭용 키워드 목록 페이지.
-    'keyword_group'이 'keyword_group1'인 키워드만 보여준다.
+    groups 기준으로 필터링할 수 있는 단순 복사용 목록을 보여준다.
     """
-    # 'keyword_group'이 'keyword_group1'인 키워드만 필터링
-    keywords = ShoppingKeyword.objects.filter(keyword_group='keyword_group1').select_related('client').order_by('client__name', 'keyword')
+    selected_group_name = request.GET.get('group')
+    keywords = ShoppingKeyword.objects.select_related('client').prefetch_related('groups')
+
+    if selected_group_name:
+        keywords = keywords.filter(groups__name=selected_group_name)
+
+    keywords = keywords.exclude(keyword='').order_by('client__name', 'keyword')
+
     return render(request, 'blog/shopping_keyword_click.html', {
         'keywords': keywords,
+        'available_groups': KeywordGroup.objects.all().order_by('name'),
+        'selected_group_name': selected_group_name,
     })
 
 @login_required
@@ -410,17 +431,6 @@ def client_list(request):
     
     # 'client_list.html' 템플릿을 렌더링하며 데이터를 전달합니다.
     return render(request, 'blog/client_list.html', context)
-@login_required
-@require_POST
-@csrf_exempt
-def create_sub_keyword_ajax(request): # 함수명 변경 (하위 키워드 추가)
-    form = SubKeywordAddForm(request.POST) # SubKeywordAddForm 사용
-    if form.is_valid():
-        form.save() 
-        return JsonResponse({'status': 'success', 'message': f"'{form.cleaned_data['keyword']}' 하위 키워드가 '{form.cleaned_data['main_keyword'].keyword}'에 성공적으로 추가되었습니다."})
-    else:
-        # 폼 유효성 검사 실패 시 에러 메시지 반환 (디버깅 용이하게 errors를 그대로 반환)
-        return JsonResponse({'status': 'error', 'errors': form.errors}, status=400)
 @login_required
 def shopping_keyword_click_list(request):
     """

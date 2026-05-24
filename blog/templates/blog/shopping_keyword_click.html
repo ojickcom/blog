@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% block title %}클릭용 쇼핑 키워드{% endblock %}
 
-{% block head %}
+{% block extra_head %}
     <style>
         body {
             background-color: #e6f7ff; /* 팝업창 배경 색상 (여기서 변경 가능) */
@@ -25,6 +25,21 @@
 
 {% block content %}
 <h1 class="h3 mb-4">클릭용 쇼핑 키워드</h1>
+
+{% if available_groups %}
+<div class="d-flex flex-wrap gap-2 mb-3">
+    <a href="{% url 'shopping_keyword_click' %}"
+       class="btn btn-sm btn-outline-secondary {% if not selected_group_name %}active{% endif %}">
+        전체
+    </a>
+    {% for group in available_groups %}
+    <a href="{% url 'shopping_keyword_click' %}?group={{ group.name }}"
+       class="btn btn-sm btn-outline-primary {% if selected_group_name == group.name %}active{% endif %}">
+        {{ group.name }}
+    </a>
+    {% endfor %}
+</div>
+{% endif %}
 
 <div class="list-group">
     {% for keyword in keywords %}
