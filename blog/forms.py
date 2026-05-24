@@ -105,6 +105,12 @@ class MainKeywordInitialAddForm(forms.ModelForm):
 
 
 class MainKeywordNameUpdateForm(forms.ModelForm):
+    main_keyword = forms.ModelChoiceField(
+        queryset=ShoppingKeyword.objects.none(),
+        required=False,
+        label="상위 메인 키워드",
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
     groups = forms.ModelMultipleChoiceField(
         queryset=KeywordGroup.objects.all().order_by("name"),
         widget=forms.CheckboxSelectMultiple(attrs={"class": "form-check-input"}),
@@ -114,8 +120,9 @@ class MainKeywordNameUpdateForm(forms.ModelForm):
 
     class Meta:
         model = ShoppingKeyword
-        fields = ["keyword", "groups"]
+        fields = ["main_keyword", "keyword", "groups"]
         labels = {
+            "main_keyword": "상위 메인 키워드",
             "keyword": "메인 키워드 이름",
             "groups": "키워드 그룹",
         }
@@ -128,6 +135,15 @@ class MainKeywordNameUpdateForm(forms.ModelForm):
             ),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        client = getattr(self.instance, "client", None)
+        queryset = ShoppingKeyword.objects.filter(main_keyword__isnull=True).exclude(pk=self.instance.pk)
+        if client:
+            queryset = queryset.filter(client=client)
+        self.fields["main_keyword"].queryset = queryset.order_by("keyword")
+        self.fields["main_keyword"].empty_label = "--- 메인 키워드로 유지 ---"
+
     def clean_keyword(self):
         keyword = (self.cleaned_data["keyword"] or "").strip()
         client = self.instance.client
@@ -139,6 +155,18 @@ class MainKeywordNameUpdateForm(forms.ModelForm):
             if exists:
                 raise forms.ValidationError("같은 클라이언트에 동일한 키워드가 이미 존재합니다.")
         return keyword
+
+    def clean_main_keyword(self):
+        main_keyword = self.cleaned_data.get("main_keyword")
+        if not main_keyword:
+            return None
+        if main_keyword.pk == self.instance.pk:
+            raise forms.ValidationError("자기 자신을 상위 키워드로 선택할 수 없습니다.")
+        if self.instance.client_id and main_keyword.client_id != self.instance.client_id:
+            raise forms.ValidationError("같은 클라이언트의 메인 키워드만 선택할 수 있습니다.")
+        if main_keyword.main_keyword_id is not None:
+            raise forms.ValidationError("상위 키워드는 메인 키워드만 선택할 수 있습니다.")
+        return main_keyword
 
     def save(self, commit=True):
         instance = super().save(commit=False)

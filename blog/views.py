@@ -336,7 +336,7 @@ def shopping_keyword_edit(request, pk):
         form = MainKeywordNameUpdateForm(request.POST, instance=keyword)
         if form.is_valid():
             form.save() # 폼의 save() 메서드 내부에서 save_m2m()이 호출됩니다.
-            messages.success(request, '키워드 이름과 그룹이 성공적으로 업데이트되었습니다.')
+            messages.success(request, '키워드 정보가 성공적으로 업데이트되었습니다.')
             redirect_url = reverse('shopping_keyword_list')
             if return_query:
                 redirect_url = f'{redirect_url}?{return_query}'
