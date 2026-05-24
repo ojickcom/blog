@@ -9,6 +9,7 @@ from django.db.models import Case, F, IntegerField, Sum, Value, When
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils.http import urlencode
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
@@ -262,6 +263,16 @@ def increment_blog_copy_count(request):
 def shopping_keyword_list(request):
     selected_group_name = request.GET.get('group')
     selected_client_name = request.GET.get('client') # 클라이언트 이름 가져오기
+    return_query = urlencode(
+        {
+            key: value
+            for key, value in {
+                'group': selected_group_name,
+                'client': selected_client_name,
+            }.items()
+            if value
+        }
+    )
 
     available_groups = KeywordGroup.objects.all().order_by('name')
     available_clients = Client.objects.all().order_by('name') # 모든 클라이언트 목록 가져오기
@@ -312,11 +323,13 @@ def shopping_keyword_list(request):
         'selected_group_name': selected_group_name,
         'available_clients': available_clients, # 추가: 클라이언트 목록 전달
         'selected_client_name': selected_client_name, # 추가: 선택된 클라이언트명 전달
+        'return_query': return_query,
     }
     return render(request, 'blog/shopping_keyword_list.html', context)
 @login_required
 def shopping_keyword_edit(request, pk):
     keyword = get_object_or_404(ShoppingKeyword, pk=pk)
+    return_query = request.GET.get('return_query') or request.POST.get('return_query') or ''
 
     if request.method == 'POST':
         # MainKeywordNameUpdateForm은 keyword와 groups만 수정합니다.
@@ -324,7 +337,10 @@ def shopping_keyword_edit(request, pk):
         if form.is_valid():
             form.save() # 폼의 save() 메서드 내부에서 save_m2m()이 호출됩니다.
             messages.success(request, '키워드 이름과 그룹이 성공적으로 업데이트되었습니다.')
-            return redirect('shopping_keyword_list')
+            redirect_url = reverse('shopping_keyword_list')
+            if return_query:
+                redirect_url = f'{redirect_url}?{return_query}'
+            return redirect(redirect_url)
         else:
             for field, errors in form.errors.items():
                 for error in errors:
@@ -335,6 +351,7 @@ def shopping_keyword_edit(request, pk):
     context = {
         'form': form,
         'keyword': keyword,
+        'return_query': return_query,
     }
     return render(request, 'blog/shopping_keyword_edit.html', context)
 
@@ -404,8 +421,12 @@ def shopping_keyword_input(request):
 def shopping_keyword_delete(request, pk):
     """쇼핑 키워드 삭제."""
     keyword = get_object_or_404(ShoppingKeyword, pk=pk)
+    return_query = request.POST.get('return_query') or ''
     keyword.delete()
-    return redirect('shopping_keyword_list')
+    redirect_url = reverse('shopping_keyword_list')
+    if return_query:
+        redirect_url = f'{redirect_url}?{return_query}'
+    return redirect(redirect_url)
 
 @login_required
 def shopping_keyword_click_page(request):

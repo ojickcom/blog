@@ -228,9 +228,10 @@
                             {% endfor %}
                             <td class="manage-cell">
                                 <div class="action-buttons">
-                                    <a href="{% url 'shopping_keyword_edit' pk=keyword.pk %}" class="btn btn-sm btn-info">수정</a>
+                                    <a href="{% url 'shopping_keyword_edit' pk=keyword.pk %}{% if return_query %}?return_query={{ return_query|urlencode }}{% endif %}" class="btn btn-sm btn-info">수정</a>
                                     <form action="{% url 'shopping_keyword_delete' pk=keyword.pk %}" method="post" onsubmit="return confirm('정말로 삭제하시겠습니까?');">
                                         {% csrf_token %}
+                                        <input type="hidden" name="return_query" value="{{ return_query }}">
                                         <button type="submit" class="btn btn-sm btn-danger">삭제</button>
                                     </form>
                                 </div>
