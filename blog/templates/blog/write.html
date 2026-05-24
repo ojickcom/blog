@@ -75,7 +75,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const displayTalkstyle = document.getElementById('display-talkstyle');
     const displayAspect = document.getElementById('display-aspect');
     const copyButton = document.getElementById('copy-title-button');
-    const copyFeedback = document.getElementById('copy-feedback');
 
     // 랜덤 구성 요소를 가져와 업데이트하는 함수
     function updateRandomComponents() {
@@ -104,37 +103,20 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
 
-    // 복사 기능을 수행하는 함수
     function copyTitleComponents() {
         const subhead = displaySubhead.textContent;
         const character = displayCharacter.textContent;
         const talkstyle = displayTalkstyle.textContent;
-        const client = clientSelect.options[clientSelect.selectedIndex].text; 
 
         const textToCopy = `글 주제: ${subhead}\n글자수: ${character}\n글어투: ${talkstyle}\n 글내용:  제목을 복사 할 것이니 내용에 특수문자, *,#를 넣지 말고 같은 단어는 9번 이하루 반복하고, 내용의 제일 첫줄은 제목으로 10단어 내외로, 그리고 글 주제에서에 대해서 상업적 내용이 아닌 정보성 블로그 포스팅용도로 검색자의 의도를 파악해서 적어줘. `;
+        const feedbackElement = copyButton.querySelector('#copy-feedback');
 
-        const tempTextArea = document.createElement('textarea');
-        tempTextArea.value = textToCopy;
-        document.body.appendChild(tempTextArea);
-        tempTextArea.select();
-      // ** ${client}을 글 내용에 한 번 언급하고,**
-        try {
-            const successful = document.execCommand('copy');
-            if (successful) {
-                copyFeedback.style.display = 'inline';
-                setTimeout(() => {
-                    copyFeedback.style.display = 'none';
-                }, 2000);
-            } else {
-                console.warn('Fallback: Copying text command was unsuccessful.');
-                // alert('텍스트 복사에 실패했습니다. 수동으로 복사해주세요: \n' + textToCopy); // Canvas 환경에서 alert 사용 금지
-            }
-        } catch (err) {
-            console.error('Fallback: Oops, unable to copy', err);
-            // alert('텍스트 복사에 실패했습니다. 수동으로 복사해주세요: \n' + textToCopy); // Canvas 환경에서 alert 사용 금지
-        } finally {
-            document.body.removeChild(tempTextArea);
-        }
+        window.copyTextWithFeedback(textToCopy, {
+            errorMessage: '텍스트 복사에 실패했습니다.',
+            feedbackElement: feedbackElement,
+        }).catch(err => {
+            console.error('텍스트 복사 실패:', err);
+        });
     }
 
 

@@ -211,6 +211,26 @@ class KeywordClick(models.Model):
 
     def __str__(self):
         return f"{self.keyword.keyword} - {self.click_date}: {self.click_count}회"
+
+
+class BlogCopyCount(models.Model):
+    blog = models.ForeignKey(
+        Blog,
+        on_delete=models.CASCADE,
+        related_name='copy_counts',
+        verbose_name="블로그",
+    )
+    copy_date = models.DateField(default=timezone.now, verbose_name="복사 날짜")
+    copy_count = models.PositiveIntegerField(default=0, verbose_name="복사 횟수")
+
+    class Meta:
+        unique_together = ('blog', 'copy_date')
+        verbose_name = "블로그 복사 기록"
+        verbose_name_plural = "블로그 복사 기록"
+        ordering = ['-copy_date']
+
+    def __str__(self):
+        return f"{self.blog.b_title or self.blog.title} - {self.copy_date}: {self.copy_count}회"
     
 class Expense(models.Model):
     name = models.CharField(max_length=200, verbose_name="비용 이름")

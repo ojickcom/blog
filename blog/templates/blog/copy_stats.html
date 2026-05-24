@@ -1,0 +1,227 @@
+{% extends 'base.html' %}
+
+{% block title %}복사 통계{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .stats-table th,
+    .stats-table td {
+        white-space: nowrap;
+        font-size: 0.85rem;
+    }
+    .stats-label {
+        max-width: 320px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="py-3">
+    <h1 class="h3 mb-4">복사 통계</h1>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-2">
+                    <label for="days-filter" class="form-label">기간</label>
+                    <select name="days" id="days-filter" class="form-select">
+                        {% for days in period_options %}
+                        <option value="{{ days }}" {% if days == selected_days %}selected{% endif %}>
+                            최근 {{ days }}일
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="client-filter" class="form-label">클라이언트</label>
+                    <select name="client" id="client-filter" class="form-select">
+                        <option value="">전체 클라이언트</option>
+                        {% for client_name in available_clients %}
+                        <option value="{{ client_name }}" {% if client_name == selected_client_name %}selected{% endif %}>
+                            {{ client_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="group-filter" class="form-label">키워드 그룹</label>
+                    <select name="group" id="group-filter" class="form-select">
+                        <option value="">전체 그룹</option>
+                        {% for group_name in available_groups %}
+                        <option value="{{ group_name }}" {% if group_name == selected_group_name %}selected{% endif %}>
+                            {{ group_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="top-n-filter" class="form-label">상위 항목 수</label>
+                    <select name="top_n" id="top-n-filter" class="form-select">
+                        {% for top_n in top_n_options %}
+                        <option value="{{ top_n }}" {% if top_n == selected_top_n %}selected{% endif %}>
+                            상위 {{ top_n }}개
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">필터 적용</button>
+                    <a href="{% url 'copy_stats' %}" class="btn btn-outline-secondary">초기화</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-lg-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h2 class="h5 mb-3">키워드 복사 추이</h2>
+                    <canvas id="keywordCopyChart" height="220"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h2 class="h5 mb-3">완료 글 복사 추이</h2>
+                    <canvas id="blogCopyChart" height="220"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-xl-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h2 class="h5 mb-3">키워드 복사 표</h2>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover stats-table align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>키워드</th>
+                                    {% for label in date_labels %}
+                                    <th class="text-center">{{ label }}</th>
+                                    {% endfor %}
+                                    <th class="text-center">합계</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in keyword_rows %}
+                                <tr>
+                                    <td class="stats-label" title="{{ row.label }}">{{ row.label }}</td>
+                                    {% for count in row.counts %}
+                                    <td class="text-center">{{ count }}</td>
+                                    {% endfor %}
+                                    <td class="text-center fw-bold">{{ row.total }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="{{ date_labels|length|add:'2' }}" class="text-center text-muted">선택한 기간의 키워드 복사 기록이 없습니다.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h2 class="h5 mb-3">완료 글 복사 표</h2>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover stats-table align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>완료 글 제목</th>
+                                    {% for label in date_labels %}
+                                    <th class="text-center">{{ label }}</th>
+                                    {% endfor %}
+                                    <th class="text-center">합계</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in blog_rows %}
+                                <tr>
+                                    <td class="stats-label" title="{{ row.label }}">{{ row.label }}</td>
+                                    {% for count in row.counts %}
+                                    <td class="text-center">{{ count }}</td>
+                                    {% endfor %}
+                                    <td class="text-center fw-bold">{{ row.total }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="{{ date_labels|length|add:'2' }}" class="text-center text-muted">선택한 기간의 완료 글 복사 기록이 없습니다.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const keywordLabels = JSON.parse('{{ keyword_chart_labels_json|escapejs }}');
+    const keywordDatasets = JSON.parse('{{ keyword_chart_datasets_json|escapejs }}');
+    const blogLabels = JSON.parse('{{ blog_chart_labels_json|escapejs }}');
+    const blogDatasets = JSON.parse('{{ blog_chart_datasets_json|escapejs }}');
+
+    const palette = [
+        '#0d6efd', '#198754', '#dc3545', '#fd7e14',
+        '#6f42c1', '#20c997', '#d63384', '#6c757d'
+    ];
+
+    function buildDatasets(datasets) {
+        return datasets.map((dataset, index) => ({
+            label: dataset.label,
+            data: dataset.data,
+            borderColor: palette[index % palette.length],
+            backgroundColor: palette[index % palette.length],
+            tension: 0.3,
+        }));
+    }
+
+    const keywordCanvas = document.getElementById('keywordCopyChart');
+    if (keywordCanvas) {
+        new Chart(keywordCanvas, {
+            type: 'line',
+            data: {
+                labels: keywordLabels,
+                datasets: buildDatasets(keywordDatasets),
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+            }
+        });
+    }
+
+    const blogCanvas = document.getElementById('blogCopyChart');
+    if (blogCanvas) {
+        new Chart(blogCanvas, {
+            type: 'line',
+            data: {
+                labels: blogLabels,
+                datasets: buildDatasets(blogDatasets),
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

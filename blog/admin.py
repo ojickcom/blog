@@ -1,6 +1,6 @@
 # blog/admin.py
 from django.contrib import admin
-from .models import Blog, Client, ContentSubhead, NumberCharacter, TalkStyle, ContentAspect,  ShoppingKeyword, KeywordClick, Client, Expense, KeywordGroup
+from .models import Blog, BlogCopyCount, Client, ContentSubhead, NumberCharacter, TalkStyle, ContentAspect,  ShoppingKeyword, KeywordClick, Client, Expense, KeywordGroup
 
 # Client 모델 관리자 등록 (이전과 동일)
 @admin.register(Client)
@@ -90,6 +90,14 @@ class KeywordClickAdmin(admin.ModelAdmin):
     list_filter = ('click_date', 'keyword__client')
     search_fields = ('keyword__keyword',)
     date_hierarchy = 'click_date' # 날짜별 계층 구조 보기
+
+
+@admin.register(BlogCopyCount)
+class BlogCopyCountAdmin(admin.ModelAdmin):
+    list_display = ('blog', 'copy_date', 'copy_count')
+    list_filter = ('copy_date', 'blog__client')
+    search_fields = ('blog__b_title', 'blog__title')
+    date_hierarchy = 'copy_date'
 
     admin.site.register(Expense, ExpenseAdmin)
 admin.site.register(KeywordGroup)

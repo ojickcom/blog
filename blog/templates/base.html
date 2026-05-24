@@ -115,6 +115,7 @@
             <a class="navbar-brand" href="{% url 'blog_list_pending' %}">📝 블로그</a>
             <a class="navbar-brand" href="http://ojickcom.duckdns.org:8000/completed/">완료 글</a>
             <a class="navbar-brand" href="http://ojickcom.duckdns.org:8000/shopping_keywords/click_list/">클릭 키워드</a>
+            <a class="navbar-brand" href="{% url 'copy_stats' %}">복사 통계</a>
             <a class="navbar-brand" href="{% url 'shopping_keyword_list' %}">📝 쇼핑 전체</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -180,10 +181,31 @@
                     errorMessage: '복사에 실패했습니다.',
                     autoHideMs: 2000,
                     onSuccess: null,
+                    successTextTarget: null,
+                    successText: null,
+                    resetSuccessTextAfterMs: 1500,
+                    feedbackElement: null,
+                    feedbackDisplayMs: 2000,
                 }, options || {});
 
+                const originalSuccessText = settings.successTextTarget ? settings.successTextTarget.innerHTML : null;
                 const handleSuccess = function() {
                     window.showCopySuccessModal(text, settings.autoHideMs);
+
+                    if (settings.successTextTarget && settings.successText) {
+                        settings.successTextTarget.innerHTML = settings.successText;
+                        setTimeout(() => {
+                            settings.successTextTarget.innerHTML = originalSuccessText;
+                        }, settings.resetSuccessTextAfterMs);
+                    }
+
+                    if (settings.feedbackElement) {
+                        settings.feedbackElement.style.display = 'inline';
+                        setTimeout(() => {
+                            settings.feedbackElement.style.display = 'none';
+                        }, settings.feedbackDisplayMs);
+                    }
+
                     if (typeof settings.onSuccess === 'function') {
                         settings.onSuccess();
                     }

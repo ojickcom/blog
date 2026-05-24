@@ -100,34 +100,6 @@
       const copyButtons = document.querySelectorAll('.copy-btn'); 
       const completeBtn = document.getElementById('complete-btn');
 
-      // 복사 기능을 수행하는 함수 
-      function copyTextToClipboard(text, feedbackElement) { 
-          const tempTextArea = document.createElement('textarea'); 
-          tempTextArea.value = text; 
-          document.body.appendChild(tempTextArea); 
-          tempTextArea.select(); 
-          
-          try { 
-              const successful = document.execCommand('copy'); 
-              if (successful) { 
-                  if (feedbackElement) { 
-                      feedbackElement.style.display = 'inline'; // "복사됨!" 메시지 표시 
-                      setTimeout(() => { 
-                          feedbackElement.style.display = 'none'; // 2초 후 숨김 
-                      }, 2000); 
-                  } 
-              } else { 
-                  console.warn('Fallback: Copying text command was unsuccessful.'); 
-                  // alert('텍스트 복사에 실패했습니다. 수동으로 복사해주세요: \n' + text); // Canvas 환경에서 alert 사용 금지 
-              } 
-          } catch (err) { 
-              console.error('Fallback: Oops, unable to copy', err); 
-              // alert('텍스트 복사에 실패했습니다. 수동으로 복사해주세요: \n' + text); // Canvas 환경에서 alert 사용 금지 
-          } finally { 
-              document.body.removeChild(tempTextArea); 
-          } 
-      } 
-
       // 복사 버튼 이벤트 리스너
       copyButtons.forEach(button => { 
           button.addEventListener('click', function() { 
@@ -136,7 +108,12 @@
               const feedbackElement = this.querySelector('.copy-feedback'); // 버튼 내의 피드백 span 
 
               if (targetElement) { 
-                  copyTextToClipboard(targetElement.textContent.trim(), feedbackElement); 
+                  window.copyTextWithFeedback(targetElement.textContent.trim(), {
+                      errorMessage: '텍스트 복사에 실패했습니다.',
+                      feedbackElement: feedbackElement,
+                  }).catch(err => {
+                      console.error('텍스트 복사 실패:', err);
+                  });
               } 
           }); 
       }); 

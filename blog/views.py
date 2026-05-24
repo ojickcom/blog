@@ -1,4 +1,6 @@
 from datetime import date, datetime, timedelta
+import json
+from collections import defaultdict
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -19,6 +21,7 @@ from .forms import (
 )
 from .models import (
     Blog,
+    BlogCopyCount,
     Client,
     ContentAspect,
     ContentSubhead,
@@ -226,6 +229,32 @@ def blog_complete(request, pk):
         blog.blog_write = True
         blog.save()
         return JsonResponse({'status': 'success', 'message': '글작성이 완료되었습니다.'})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+
+@login_required
+@require_POST
+def increment_blog_copy_count(request):
+    """완료 글 제목 복사 횟수를 일별로 기록."""
+    blog_id = request.POST.get('blog_id')
+    today = date.today()
+
+    if not blog_id:
+        return JsonResponse({'status': 'error', 'message': 'Blog ID is required.'}, status=400)
+
+    try:
+        copy_record, created = BlogCopyCount.objects.get_or_create(
+            blog_id=blog_id,
+            copy_date=today,
+            defaults={'copy_count': 0},
+        )
+        copy_record.copy_count = F('copy_count') + 1
+        copy_record.save()
+        copy_record.refresh_from_db()
+        return JsonResponse({'status': 'success', 'new_count': copy_record.copy_count})
+    except Blog.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Blog not found.'}, status=404)
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
     
@@ -485,3 +514,113 @@ def shopping_keyword_click_list(request):
         'selected_group_name': selected_group_name,
     }
     return render(request, 'blog/shopping_keyword_click_list.html', context)
+
+
+@login_required
+def copy_stats(request):
+    """복사 통계 대시보드."""
+    today = date.today()
+    period_options = [7, 14, 30]
+    top_n_options = [5, 10, 20]
+    selected_days = request.GET.get('days', '7')
+    selected_top_n = request.GET.get('top_n', '10')
+    try:
+        selected_days = int(selected_days)
+    except ValueError:
+        selected_days = 7
+    if selected_days not in period_options:
+        selected_days = 7
+    try:
+        selected_top_n = int(selected_top_n)
+    except ValueError:
+        selected_top_n = 10
+    if selected_top_n not in top_n_options:
+        selected_top_n = 10
+
+    date_range = [today - timedelta(days=i) for i in range(selected_days - 1, -1, -1)]
+    date_labels = [d.strftime('%m-%d') for d in date_range]
+    selected_client_name = request.GET.get('client')
+    selected_group_name = request.GET.get('group')
+
+    available_clients = Client.objects.values_list('name', flat=True).distinct().order_by('name')
+    available_groups = KeywordGroup.objects.values_list('name', flat=True).order_by('name')
+
+    keyword_records = KeywordClick.objects.filter(click_date__in=date_range)
+    if selected_client_name:
+        keyword_records = keyword_records.filter(keyword__client__name=selected_client_name)
+    if selected_group_name:
+        keyword_records = keyword_records.filter(keyword__groups__name=selected_group_name)
+    keyword_records = (
+        keyword_records
+        .select_related('keyword__client')
+        .order_by('keyword__client__name', 'keyword__keyword', 'click_date')
+    )
+    keyword_series_map = defaultdict(lambda: [0] * len(date_range))
+    keyword_name_map = {}
+    for record in keyword_records:
+        key = record.keyword_id
+        keyword_name_map[key] = record.keyword.keyword
+        index = date_range.index(record.click_date)
+        keyword_series_map[key][index] = record.click_count
+
+    keyword_rows = []
+    for keyword_id, counts in keyword_series_map.items():
+        keyword_rows.append({
+            'label': keyword_name_map[keyword_id],
+            'counts': counts,
+            'total': sum(counts),
+        })
+    keyword_rows.sort(key=lambda row: row['total'], reverse=True)
+
+    blog_records = BlogCopyCount.objects.filter(copy_date__in=date_range)
+    if selected_client_name:
+        blog_records = blog_records.filter(blog__client__name=selected_client_name)
+    blog_records = (
+        blog_records
+        .select_related('blog__client')
+        .order_by('blog__written_date', 'copy_date')
+    )
+    blog_series_map = defaultdict(lambda: [0] * len(date_range))
+    blog_name_map = {}
+    for record in blog_records:
+        key = record.blog_id
+        blog_name_map[key] = record.blog.b_title or record.blog.title or f'블로그 {record.blog_id}'
+        index = date_range.index(record.copy_date)
+        blog_series_map[key][index] = record.copy_count
+
+    blog_rows = []
+    for blog_id, counts in blog_series_map.items():
+        blog_rows.append({
+            'label': blog_name_map[blog_id],
+            'counts': counts,
+            'total': sum(counts),
+        })
+    blog_rows.sort(key=lambda row: row['total'], reverse=True)
+
+    keyword_chart_datasets = [
+        {'label': row['label'], 'data': row['counts']}
+        for row in keyword_rows[:selected_top_n]
+    ]
+    blog_chart_datasets = [
+        {'label': row['label'], 'data': row['counts']}
+        for row in blog_rows[:selected_top_n]
+    ]
+
+    context = {
+        'date_labels': date_labels,
+        'keyword_rows': keyword_rows[:selected_top_n],
+        'blog_rows': blog_rows[:selected_top_n],
+        'period_options': period_options,
+        'selected_days': selected_days,
+        'top_n_options': top_n_options,
+        'selected_top_n': selected_top_n,
+        'available_clients': available_clients,
+        'available_groups': available_groups,
+        'selected_client_name': selected_client_name,
+        'selected_group_name': selected_group_name,
+        'keyword_chart_labels_json': json.dumps(date_labels, ensure_ascii=False),
+        'keyword_chart_datasets_json': json.dumps(keyword_chart_datasets, ensure_ascii=False),
+        'blog_chart_labels_json': json.dumps(date_labels, ensure_ascii=False),
+        'blog_chart_datasets_json': json.dumps(blog_chart_datasets, ensure_ascii=False),
+    }
+    return render(request, 'blog/copy_stats.html', context)
