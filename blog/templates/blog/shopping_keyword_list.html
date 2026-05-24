@@ -204,16 +204,20 @@
                                 {% if keyword.main_keyword %}
                                     {{ keyword.main_keyword.keyword }}
                                 {% else %}
-                                    -
+                                    <a href="{% url 'shopping_keyword_detail' pk=keyword.pk %}" class="keyword-name">
+                                        {{ keyword.keyword }}
+                                    </a>
                                 {% endif %}
                             </td>
                             <td class="keyword-col">
                                 {% if keyword.main_keyword %}
                                 <span class="sub-keyword-prefix">└─</span>
-                                {% endif %}
                                 <a href="{% url 'shopping_keyword_detail' pk=keyword.pk %}" class="keyword-name">
                                     {{ keyword.keyword }}
                                 </a>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
                             </td>
                             <td>
                                 {# groups 필드를 순회하며 출력 #}
