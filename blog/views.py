@@ -6,6 +6,7 @@ from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db.models import Case, F, IntegerField, Sum, Value, When
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
@@ -69,6 +70,34 @@ def blog_list_completed(request):
         'available_clients': available_clients,
         'selected_client_name': selected_client_name,
     })
+
+
+@login_required
+@require_POST
+def delete_old_completed_blogs(request):
+    """일주일이 지난 완료 글 일괄 삭제."""
+    selected_client_name = request.POST.get('client')
+    cutoff_date = timezone.now() - timedelta(days=7)
+
+    blogs_query = Blog.objects.filter(
+        blog_write=True,
+        written_date__lt=cutoff_date,
+    )
+
+    if selected_client_name:
+        blogs_query = blogs_query.filter(client__name=selected_client_name)
+
+    deleted_count, _ = blogs_query.delete()
+
+    if deleted_count:
+        messages.success(request, f'일주일 이전 완료 글 {deleted_count}건을 삭제했습니다.')
+    else:
+        messages.info(request, '삭제할 지난 완료 글이 없습니다.')
+
+    redirect_url = reverse('blog_list_completed')
+    if selected_client_name:
+        return redirect(f"{redirect_url}?client={selected_client_name}")
+    return redirect(redirect_url)
 
 @login_required
 def blog_list_pending(request):
