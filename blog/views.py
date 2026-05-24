@@ -277,7 +277,11 @@ def shopping_keyword_list(request):
     available_groups = KeywordGroup.objects.all().order_by('name')
     available_clients = Client.objects.all().order_by('name') # 모든 클라이언트 목록 가져오기
 
-    keywords_query = ShoppingKeyword.objects.select_related('client', 'main_keyword').prefetch_related('sub_keywords', 'clicks', 'groups')
+    keywords_query = (
+        ShoppingKeyword.objects.select_related('client', 'main_keyword')
+        .prefetch_related('clicks', 'groups')
+        .filter(main_keyword__isnull=False)
+    )
 
     # 그룹 필터링
     if selected_group_name:
@@ -287,15 +291,7 @@ def shopping_keyword_list(request):
     if selected_client_name:
         keywords_query = keywords_query.filter(client__name=selected_client_name)
 
-    keywords = keywords_query.order_by(
-        'client__name',
-        Case(
-            When(main_keyword__isnull=True, then=Value(0)),
-            default=Value(1),
-            output_field=IntegerField()
-        ),
-        'keyword'
-    )
+    keywords = keywords_query.order_by('client__name', 'main_keyword__keyword', 'keyword')
 
     today = date.today()
     date_range = [today - timedelta(days=i) for i in range(7)]
@@ -312,7 +308,6 @@ def shopping_keyword_list(request):
         keyword_obj.is_click_target = True 
 
     sub_keyword_add_form = SubKeywordAddForm()
-    sub_keyword_add_form.fields['main_keyword'].queryset = ShoppingKeyword.objects.filter(main_keyword__isnull=True).exclude(keyword='').order_by('keyword')
 
     context = {
         'keywords': keywords,
@@ -332,7 +327,6 @@ def shopping_keyword_edit(request, pk):
     return_query = request.GET.get('return_query') or request.POST.get('return_query') or ''
 
     if request.method == 'POST':
-        # MainKeywordNameUpdateForm은 keyword와 groups만 수정합니다.
         form = MainKeywordNameUpdateForm(request.POST, instance=keyword)
         if form.is_valid():
             form.save() # 폼의 save() 메서드 내부에서 save_m2m()이 호출됩니다.
