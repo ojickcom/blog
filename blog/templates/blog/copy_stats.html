@@ -15,6 +15,10 @@
         overflow: hidden;
         text-overflow: ellipsis;
     }
+    .chart-wrap {
+        position: relative;
+        height: 320px;
+    }
 </style>
 {% endblock %}
 
@@ -77,18 +81,22 @@
 
     <div class="row g-4 mb-4">
         <div class="col-lg-6">
-            <div class="card shadow-sm h-100">
+            <div class="card shadow-sm">
                 <div class="card-body">
                     <h2 class="h5 mb-3">키워드 복사 추이</h2>
-                    <canvas id="keywordCopyChart" height="220"></canvas>
+                    <div class="chart-wrap">
+                        <canvas id="keywordCopyChart"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
         <div class="col-lg-6">
-            <div class="card shadow-sm h-100">
+            <div class="card shadow-sm">
                 <div class="card-body">
                     <h2 class="h5 mb-3">완료 글 복사 추이</h2>
-                    <canvas id="blogCopyChart" height="220"></canvas>
+                    <div class="chart-wrap">
+                        <canvas id="blogCopyChart"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
