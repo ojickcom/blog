@@ -105,6 +105,11 @@ class MainKeywordInitialAddForm(forms.ModelForm):
 
 
 class MainKeywordNameUpdateForm(forms.ModelForm):
+    client = forms.ModelChoiceField(
+        queryset=Client.objects.none(),
+        label="클라이언트",
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
     main_keyword = forms.ModelChoiceField(
         queryset=ShoppingKeyword.objects.none(),
         required=False,
@@ -120,8 +125,9 @@ class MainKeywordNameUpdateForm(forms.ModelForm):
 
     class Meta:
         model = ShoppingKeyword
-        fields = ["main_keyword", "keyword", "groups"]
+        fields = ["client", "main_keyword", "keyword", "groups"]
         labels = {
+            "client": "클라이언트",
             "main_keyword": "상위 메인 키워드",
             "keyword": "메인 키워드 이름",
             "groups": "키워드 그룹",
@@ -137,16 +143,27 @@ class MainKeywordNameUpdateForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        client = getattr(self.instance, "client", None)
+        self.fields["client"].queryset = Client.objects.all().order_by("name")
+        self.fields["client"].empty_label = "--- 클라이언트를 선택하세요 ---"
+
+        client = self.instance.client if getattr(self.instance, "client_id", None) else None
+        client_field_name = self.add_prefix("client")
+        selected_client_id = self.data.get(client_field_name) if self.is_bound else None
+        if selected_client_id:
+            try:
+                client = Client.objects.get(pk=selected_client_id)
+            except (Client.DoesNotExist, ValueError, TypeError):
+                client = self.instance.client if getattr(self.instance, "client_id", None) else None
+
         queryset = ShoppingKeyword.objects.filter(main_keyword__isnull=True).exclude(pk=self.instance.pk)
         if client:
             queryset = queryset.filter(client=client)
-        self.fields["main_keyword"].queryset = queryset.order_by("keyword")
+        self.fields["main_keyword"].queryset = queryset.select_related("client").order_by("keyword")
         self.fields["main_keyword"].empty_label = "--- 메인 키워드로 유지 ---"
 
     def clean_keyword(self):
         keyword = (self.cleaned_data["keyword"] or "").strip()
-        client = self.instance.client
+        client = self.cleaned_data.get("client")
         if client:
             exists = ShoppingKeyword.objects.filter(
                 client=client,
@@ -158,11 +175,12 @@ class MainKeywordNameUpdateForm(forms.ModelForm):
 
     def clean_main_keyword(self):
         main_keyword = self.cleaned_data.get("main_keyword")
+        client = self.cleaned_data.get("client")
         if not main_keyword:
             return None
         if main_keyword.pk == self.instance.pk:
             raise forms.ValidationError("자기 자신을 상위 키워드로 선택할 수 없습니다.")
-        if self.instance.client_id and main_keyword.client_id != self.instance.client_id:
+        if client and main_keyword.client_id != client.id:
             raise forms.ValidationError("같은 클라이언트의 메인 키워드만 선택할 수 있습니다.")
         if main_keyword.main_keyword_id is not None:
             raise forms.ValidationError("상위 키워드는 메인 키워드만 선택할 수 있습니다.")
