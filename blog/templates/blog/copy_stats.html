@@ -15,6 +15,16 @@
         overflow: hidden;
         text-overflow: ellipsis;
     }
+    .blog-title-label {
+        max-width: 280px;
+        white-space: normal !important;
+        word-break: break-word;
+        line-height: 1.2;
+        font-size: 0.8rem;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
     .chart-wrap {
         position: relative;
         height: 320px;
@@ -121,7 +131,7 @@
                             <tbody>
                                 {% for row in keyword_rows %}
                                 <tr>
-                                    <td class="stats-label" title="{{ row.label }}">{{ row.label }}</td>
+                                    <td class="stats-label blog-title-label" title="{{ row.label }}">{{ row.label }}</td>
                                     {% for count in row.counts %}
                                     <td class="text-center">{{ count }}</td>
                                     {% endfor %}

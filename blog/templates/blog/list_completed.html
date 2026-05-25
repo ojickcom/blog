@@ -13,6 +13,18 @@
         white-space: nowrap;
         text-overflow: ellipsis;
     }
+    .completed-card-actions {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.25rem;
+        flex-shrink: 0;
+    }
+    .completed-delete-btn {
+        font-size: 0.6rem;
+        padding: 0.05rem 0.25rem;
+        min-height: 20px;
+        line-height: 1;
+    }
 </style>
 {% endblock %}
 
@@ -40,14 +52,23 @@
                         <h5 class="card-title compact-title flex-grow-1 mb-0 me-2">
                             <span id="blog-title-{{ blog.pk }}" class="completed-title-preview" data-full-title="{{ blog.b_title }}" title="{{ blog.b_title }}">{{ blog.b_title }}</span>
                         </h5>
-                        <button type="button"
-                                class="btn btn-sm btn-outline-secondary copy-btn text-nowrap"
-                                data-blog-id="{{ blog.pk }}"
-                                data-bs-toggle="tooltip"
-                                data-bs-placement="top"
-                                title="클립보드에 제목 복사">
-                            📋 복사
-                        </button>
+                        <div class="completed-card-actions">
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-secondary copy-btn text-nowrap"
+                                    data-blog-id="{{ blog.pk }}"
+                                    data-bs-toggle="tooltip"
+                                    data-bs-placement="top"
+                                    title="클립보드에 제목 복사">
+                                📋 복사
+                            </button>
+                            <form method="post" action="{% url 'blog_delete' blog.pk %}" onsubmit="return confirm('정말로 이 완료 글을 삭제하시겠습니까?');">
+                                {% csrf_token %}
+                                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger completed-delete-btn">
+                                    삭제
+                                </button>
+                            </form>
+                        </div>
                     </div>
                 </div>
             </div>

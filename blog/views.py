@@ -11,6 +11,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.http import urlencode
 from django.utils import timezone
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
@@ -216,7 +217,16 @@ def get_random_title_components(request):
 def blog_delete(request, pk):
     """블로그 게시물 삭제 뷰"""
     blog = get_object_or_404(Blog, pk=pk) # 해당 PK의 블로그 게시물을 가져오거나 404 에러 발생
+    next_url = request.POST.get('next')
     blog.delete() # 게시물 삭제
+
+    if next_url and url_has_allowed_host_and_scheme(
+        url=next_url,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure(),
+    ):
+        return redirect(next_url)
+
     return redirect('blog_list_pending') # 삭제 후 대기 중인 블로그 목록 페이지로 리다이렉트
 
 @login_required
