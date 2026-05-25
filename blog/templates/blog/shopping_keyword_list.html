@@ -100,6 +100,11 @@
         min-width: auto;
         width: auto;
     }
+    .shopping-keyword-page .action-buttons .delete-keyword-btn {
+        font-size: 0.7rem;
+        padding: 0.22rem 0.45rem;
+        line-height: 1.1;
+    }
     .shopping-keyword-page .table-responsive {
         max-height: 70vh;
     }
@@ -237,7 +242,7 @@
                                     <form action="{% url 'shopping_keyword_delete' pk=keyword.pk %}" method="post" onsubmit="return confirm('정말로 삭제하시겠습니까?');">
                                         {% csrf_token %}
                                         <input type="hidden" name="return_query" value="{{ return_query }}">
-                                        <button type="submit" class="btn btn-sm btn-danger">삭제</button>
+                                        <button type="submit" class="btn btn-sm btn-danger delete-keyword-btn">삭제</button>
                                     </form>
                                 </div>
                             </td>

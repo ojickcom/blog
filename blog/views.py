@@ -561,6 +561,9 @@ def shopping_keyword_click_list(request):
     키워드 그룹별로 필터링 가능.
     """
     selected_group_name = request.GET.get('group') # URL 쿼리 파라미터 'group' 가져오기
+    if not selected_group_name:
+        default_query = urlencode({'group': '플트래픽1'})
+        return redirect(f"{reverse('shopping_keyword_click_list')}?{default_query}")
     available_groups_queryset = KeywordGroup.objects.all().order_by('name')
     available_groups = [group.name for group in available_groups_queryset]
     keywords_queryset = ShoppingKeyword.objects.select_related('main_keyword').prefetch_related('groups')
