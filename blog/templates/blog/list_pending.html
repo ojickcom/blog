@@ -51,6 +51,7 @@
                         <a href="{% url 'blog_detail' blog.pk %}" class="btn btn-sm btn-outline-primary">자세히 보기</a>
                         <form action="{% url 'blog_delete' blog.pk %}" method="post" class="d-inline">
                             {% csrf_token %}
+                            <input type="hidden" name="next" value="{{ request.get_full_path }}">
                             <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('정말로 이 블로그 글을 삭제하시겠습니까?');">삭제</button>
                         </form>
                     </div>
