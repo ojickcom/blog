@@ -53,7 +53,7 @@ def blog_list_completed(request):
     blogs_completed = blogs_query.order_by('-written_date')
 
     # 페이지네이션 설정 (한 페이지에 60개 항목)
-    paginator = Paginator(blogs_completed, 50)
+    paginator = Paginator(blogs_completed, 60)
     page_number = request.GET.get('page')
     
     try:
@@ -236,10 +236,28 @@ def blog_complete(request, pk):
     """블로그 글작성 완료 처리 뷰"""
     try:
         blog = get_object_or_404(Blog, pk=pk)
-        blog.written_date = timezone.now() 
+        client_name = blog.client.name if blog.client else ''
+        redirect_url = reverse('blog_list_pending')
+
+        if client_name:
+            redirect_url = f"{redirect_url}?{urlencode({'client': client_name})}"
+
+        if client_name == "안녕하세요":
+            blog.delete()
+            return JsonResponse({
+                'status': 'success',
+                'message': '글이 삭제되었습니다.',
+                'redirect_url': redirect_url,
+            })
+
+        blog.written_date = timezone.now()
         blog.blog_write = True
         blog.save()
-        return JsonResponse({'status': 'success', 'message': '글작성이 완료되었습니다.'})
+        return JsonResponse({
+            'status': 'success',
+            'message': '글작성이 완료되었습니다.',
+            'redirect_url': redirect_url,
+        })
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 

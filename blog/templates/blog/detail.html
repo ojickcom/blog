@@ -122,7 +122,6 @@
       if (completeBtn) {
           completeBtn.addEventListener('click', function() {
               const blogId = this.dataset.blogId;
-              const feedbackElement = document.getElementById('complete-feedback');
               
               // AJAX 요청으로 blog_write를 true로 변경
               fetch(`{% url 'blog_complete' 0 %}`.replace('0', blogId), {
@@ -135,17 +134,10 @@
               .then(response => response.json())
               .then(data => {
                   if (data.status === 'success') {
-                      // 버튼을 성공 상태로 변경
-                      this.innerHTML = '✅ 글작성 완료됨';
-                      this.classList.remove('btn-success');
-                      this.classList.add('btn-secondary');
-                      this.disabled = true;
-                      
-                      // 피드백 메시지 표시
-                      feedbackElement.style.display = 'inline';
-                      setTimeout(() => {
-                          feedbackElement.style.display = 'none';
-                      }, 3000);
+                      if (data.redirect_url) {
+                          window.location.href = data.redirect_url;
+                          return;
+                      }
                   }
               })
               .catch(error => {
