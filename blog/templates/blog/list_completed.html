@@ -203,21 +203,15 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // 제목의 첫 두 단어를 제외하고 나머지를 표시
-    function getTitleWithoutFirstTwoWords(text) {
-        const words = text.trim().split(/\s+/);
-        if (words.length <= 2) {
-            return text.trim();
-        }
-        return words.slice(2).join(' ');
+    function getDisplayTitle(text) {
+        return (text || '').trim();
     }
 
-    // 완료 글 제목 표시 규칙 적용
     const titleElements = document.querySelectorAll('[id^="blog-title-"]');
     titleElements.forEach(element => {
         const fullTitle = element.dataset.fullTitle;
         if (fullTitle) {
-            element.textContent = getTitleWithoutFirstTwoWords(fullTitle);
+            element.textContent = getDisplayTitle(fullTitle);
         }
     });
 
@@ -325,7 +319,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (titleElement) {
                         titleElement.dataset.fullTitle = data.b_title;
                         titleElement.title = data.b_title;
-                        titleElement.textContent = getTitleWithoutFirstTwoWords(data.b_title);
+                        titleElement.textContent = getDisplayTitle(data.b_title);
                     }
                     if (editButton) {
                         editButton.dataset.editBlogTitle = data.b_title;
