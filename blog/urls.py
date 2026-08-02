@@ -6,6 +6,7 @@ urlpatterns = [
     path('', views.blog_list_pending, name='blog_list_pending'),
     path('completed/', views.blog_list_completed, name='blog_list_completed'),
     path('completed/delete-old/', views.delete_old_completed_blogs, name='delete_old_completed_blogs'),
+    path('completed/<int:pk>/update-title/', views.update_completed_blog_title, name='update_completed_blog_title'),
     path('write/', views.blog_write, name='blog_write'),
     path('<int:pk>/', views.blog_detail, name='blog_detail'),
     path('<int:pk>/delete/', views.blog_delete, name='blog_delete'),

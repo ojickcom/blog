@@ -27,6 +27,13 @@
         line-height: 1 !important;
         min-width: 32px !important;
     }
+    .completed-card-actions .completed-edit-btn {
+        font-size: 0.52rem !important;
+        padding: 0.01rem 0.12rem !important;
+        min-height: 16px !important;
+        line-height: 1 !important;
+        min-width: 32px !important;
+    }
 </style>
 {% endblock %}
 
@@ -70,6 +77,13 @@
                                     삭제
                                 </button>
                             </form>
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-primary completed-edit-btn"
+                                    data-edit-blog-id="{{ blog.pk }}"
+                                    data-edit-blog-title="{{ blog.b_title|default_if_none:''|escape }}"
+                                    title="카드 제목 수정">
+                                수정
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -161,6 +175,31 @@
     <p class="alert alert-info">블로그 글이 없습니다.</p>
     {% endif %}
 
+<div class="modal fade" id="completedTitleEditModal" tabindex="-1" aria-labelledby="completedTitleEditModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form id="completedTitleEditForm">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="completedTitleEditModalLabel">완료 글 제목 수정</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="editBlogId">
+                    <div class="mb-0">
+                        <label for="editBlogTitleInput" class="form-label">카드 제목</label>
+                        <textarea id="editBlogTitleInput" class="form-control" rows="4" required></textarea>
+                        <div id="editBlogTitleError" class="text-danger small mt-2 d-none"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">취소</button>
+                    <button type="submit" class="btn btn-primary" id="completedTitleEditSubmitBtn">저장</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // 제목의 첫 두 단어를 제외하고 나머지를 표시
@@ -188,6 +227,14 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     const copyButtons = document.querySelectorAll('.copy-btn');
+    const editButtons = document.querySelectorAll('[data-edit-blog-id]');
+    const editModalElement = document.getElementById('completedTitleEditModal');
+    const editModal = editModalElement ? new bootstrap.Modal(editModalElement) : null;
+    const editForm = document.getElementById('completedTitleEditForm');
+    const editBlogIdInput = document.getElementById('editBlogId');
+    const editBlogTitleInput = document.getElementById('editBlogTitleInput');
+    const editErrorElement = document.getElementById('editBlogTitleError');
+    const editSubmitButton = document.getElementById('completedTitleEditSubmitBtn');
 
     copyButtons.forEach(button => {
         button.addEventListener('click', function() {
@@ -226,6 +273,74 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+
+    editButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            if (!editModal) {
+                return;
+            }
+
+            editBlogIdInput.value = this.dataset.editBlogId || '';
+            editBlogTitleInput.value = this.dataset.editBlogTitle || '';
+            editErrorElement.textContent = '';
+            editErrorElement.classList.add('d-none');
+            editModal.show();
+            setTimeout(() => editBlogTitleInput.focus(), 150);
+        });
+    });
+
+    if (editForm) {
+        editForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const blogId = editBlogIdInput.value;
+            const newTitle = editBlogTitleInput.value.trim();
+            if (!blogId || !newTitle) {
+                editErrorElement.textContent = '수정할 제목을 입력해주세요.';
+                editErrorElement.classList.remove('d-none');
+                return;
+            }
+
+            editSubmitButton.disabled = true;
+            editErrorElement.textContent = '';
+            editErrorElement.classList.add('d-none');
+
+            fetch(`/completed/${blogId}/update-title/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: `b_title=${encodeURIComponent(newTitle)}`
+            })
+                .then(response => response.json().then(data => ({ ok: response.ok, data })))
+                .then(({ ok, data }) => {
+                    if (!ok || data.status !== 'success') {
+                        throw new Error(data.message || '제목 수정에 실패했습니다.');
+                    }
+
+                    const titleElement = document.getElementById(`blog-title-${blogId}`);
+                    const editButton = document.querySelector(`[data-edit-blog-id="${blogId}"]`);
+                    if (titleElement) {
+                        titleElement.dataset.fullTitle = data.b_title;
+                        titleElement.title = data.b_title;
+                        titleElement.textContent = getTitleWithoutFirstTwoWords(data.b_title);
+                    }
+                    if (editButton) {
+                        editButton.dataset.editBlogTitle = data.b_title;
+                    }
+
+                    editModal.hide();
+                })
+                .catch(error => {
+                    editErrorElement.textContent = error.message || '제목 수정에 실패했습니다.';
+                    editErrorElement.classList.remove('d-none');
+                })
+                .finally(() => {
+                    editSubmitButton.disabled = false;
+                });
+        });
+    }
 });
 </script>
 

@@ -286,6 +286,25 @@ def increment_blog_copy_count(request):
         return JsonResponse({'status': 'error', 'message': 'Blog not found.'}, status=404)
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+
+@login_required
+@require_POST
+def update_completed_blog_title(request, pk):
+    """완료 목록에서 B_제목을 모달로 수정."""
+    blog = get_object_or_404(Blog, pk=pk, blog_write=True)
+    new_title = (request.POST.get('b_title') or '').strip()
+
+    if not new_title:
+        return JsonResponse({'status': 'error', 'message': '수정할 제목을 입력해주세요.'}, status=400)
+
+    duplicate_query = Blog.objects.filter(b_title=new_title).exclude(pk=blog.pk)
+    if duplicate_query.exists():
+        return JsonResponse({'status': 'error', 'message': '같은 B_제목이 이미 존재합니다.'}, status=400)
+
+    blog.b_title = new_title
+    blog.save(update_fields=['b_title'])
+    return JsonResponse({'status': 'success', 'b_title': blog.b_title})
     
 @login_required
 def shopping_keyword_list(request):
