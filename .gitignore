@@ -1,2 +1,6 @@
 __pycache__/
 *.py[cod]
+nohup.out
+*.swp
+*.swo
+db.sqlite3
