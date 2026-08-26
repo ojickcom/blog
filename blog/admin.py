@@ -1,5 +1,7 @@
 # blog/admin.py
 from django.contrib import admin
+from import_export import resources
+from import_export.admin import ImportExportModelAdmin
 from .models import Blog, BlogCopyCount, Client, ContentSubhead, NumberCharacter, TalkStyle, ContentAspect,  ShoppingKeyword, KeywordClick, Client, Expense, KeywordGroup
 
 # Client 모델 관리자 등록 (이전과 동일)
@@ -11,9 +13,16 @@ class ClientAdmin(admin.ModelAdmin):
     fields = ('name', 'client_type', 'image_url', 'payment_amount', 'is_completed') # 편집 페이지에 표시할 필드 순서
     search_fields = ['name']
 
-# ContentSubhead 모델 관리자 등록 (이전과 동일)
+class ContentSubheadResource(resources.ModelResource):
+    class Meta:
+        model = ContentSubhead
+        fields = ('id', 'name', 'client')
+        import_id_fields = ['id']
+
+# ContentSubhead 모델 관리자 등록
 @admin.register(ContentSubhead)
-class ContentSubheadAdmin(admin.ModelAdmin):
+class ContentSubheadAdmin(ImportExportModelAdmin):
+    resource_classes = [ContentSubheadResource]
     list_display = ['name', 'client']
     list_filter = ['client']
     search_fields = ['name']
