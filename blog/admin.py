@@ -99,5 +99,5 @@ class BlogCopyCountAdmin(admin.ModelAdmin):
     search_fields = ('blog__b_title', 'blog__title')
     date_hierarchy = 'copy_date'
 
-    admin.site.register(Expense, ExpenseAdmin)
+admin.site.register(Expense, ExpenseAdmin)
 admin.site.register(KeywordGroup)
