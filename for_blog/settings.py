@@ -28,6 +28,8 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['ojickcom.duckdns.org','127.0.0.1', 'localhost', '121.145.24.10']
 
+CSRF_TRUSTED_ORIGINS = ['http://ojickcom.duckdns.org:8000']
+
 
 
 # Application definition
