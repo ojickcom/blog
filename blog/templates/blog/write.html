@@ -104,9 +104,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function copyTitleComponents() {
-        const subhead = displaySubhead.textContent;
+        const subhead = displaySubhead.textContent.trim();
         const character = displayCharacter.textContent;
         const talkstyle = displayTalkstyle.textContent;
+
+        if (!subhead) {
+            alert('글 주제가 비어 있습니다. 클라이언트를 선택해 주세요.');
+            return;
+        }
 
         const textToCopy = `글 주제: ${subhead}\n글자수: ${character}\n글어투: ${talkstyle}\n 글내용:  제목을 복사 할 것이니 내용에 특수문자, *,#를 넣지 말고 같은 단어는 9번 이하루 반복하고, 내용의 제일 첫줄은 제목으로 10단어 내외로, 그리고 글 주제에서에 대해서 상업적 내용이 아닌 정보성 블로그 포스팅용도로 검색자의 의도를 파악해서 적어줘. `;
         const feedbackElement = copyButton.querySelector('#copy-feedback');
