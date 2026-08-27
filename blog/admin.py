@@ -41,13 +41,12 @@ class ContentSubheadAdmin(ImportExportModelAdmin):
 
     def download_template(self, request):
         clients = Client.objects.all().order_by('name')
-        client_list = ', '.join([f"{c.id}:{c.name}" for c in clients])
 
         dataset = tablib.Dataset(headers=['id', 'name', 'client'])
-        dataset.append_col(['(비워두세요)', '예시 글주제', str(clients.first().id) if clients.exists() else '1'], header=None)
-
-        # 참고용 시트 추가
+        first_client_id = clients.first().id if clients.exists() else 1
+        dataset.append(['', '예시 글주제', first_client_id])
         dataset.title = '글주제'
+
         note = tablib.Dataset(headers=['client_id', 'client_name'])
         for c in clients:
             note.append([c.id, c.name])
