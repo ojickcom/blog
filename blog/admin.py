@@ -53,7 +53,7 @@ class ContentSubheadAdmin(ImportExportModelAdmin):
         note.title = '클라이언트 목록'
 
         book = tablib.Databook((dataset, note))
-        response = HttpResponse(book.xlsx, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response = HttpResponse(book.export('xlsx'), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
         response['Content-Disposition'] = 'attachment; filename="contentsubhead_template.xlsx"'
         return response
 
