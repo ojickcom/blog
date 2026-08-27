@@ -118,7 +118,7 @@ def blog_list_pending(request):
         blogs_query = blogs_query.filter(client__name=selected_client_name)
     
     # 최종적으로 날짜순으로 정렬
-    blogs_pending = blogs_query.order_by('-written_date')
+    blogs_pending = blogs_query.order_by('written_date')
 
     # 필터링 드롭다운을 위해 모든 클라이언트의 이름 목록 가져오기
     available_clients = Client.objects.values_list('name', flat=True).distinct().order_by('name')
