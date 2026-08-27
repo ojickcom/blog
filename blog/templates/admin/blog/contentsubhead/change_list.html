@@ -1,0 +1,11 @@
+{% extends "import_export/change_list.html" %}
+{% load i18n %}
+
+{% block object-tools-items %}
+    <li>
+        <a href="{% url 'admin:contentsubhead_download_template' %}" class="button">
+            📥 엑셀 양식 다운로드
+        </a>
+    </li>
+    {{ block.super }}
+{% endblock %}

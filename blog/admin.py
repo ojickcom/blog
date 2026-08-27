@@ -1,5 +1,8 @@
 # blog/admin.py
+import tablib
 from django.contrib import admin
+from django.http import HttpResponse
+from django.urls import path
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
 from .models import Blog, BlogCopyCount, Client, ContentSubhead, NumberCharacter, TalkStyle, ContentAspect,  ShoppingKeyword, KeywordClick, Client, Expense, KeywordGroup
@@ -27,6 +30,33 @@ class ContentSubheadAdmin(ImportExportModelAdmin):
     list_filter = ['client']
     search_fields = ['name']
     raw_id_fields = ['client']
+    change_list_template = 'admin/blog/contentsubhead/change_list.html'
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path('download-template/', self.admin_site.admin_view(self.download_template), name='contentsubhead_download_template'),
+        ]
+        return custom_urls + urls
+
+    def download_template(self, request):
+        clients = Client.objects.all().order_by('name')
+        client_list = ', '.join([f"{c.id}:{c.name}" for c in clients])
+
+        dataset = tablib.Dataset(headers=['id', 'name', 'client'])
+        dataset.append_col(['(비워두세요)', '예시 글주제', str(clients.first().id) if clients.exists() else '1'], header=None)
+
+        # 참고용 시트 추가
+        dataset.title = '글주제'
+        note = tablib.Dataset(headers=['client_id', 'client_name'])
+        for c in clients:
+            note.append([c.id, c.name])
+        note.title = '클라이언트 목록'
+
+        book = tablib.Databook((dataset, note))
+        response = HttpResponse(book.xlsx, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = 'attachment; filename="contentsubhead_template.xlsx"'
+        return response
 
 class ExpenseAdmin(admin.ModelAdmin):
     list_display = ('name', 'price', 'is_recurring', 'date')
