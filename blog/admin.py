@@ -19,7 +19,7 @@ class ClientAdmin(admin.ModelAdmin):
 class ContentSubheadResource(resources.ModelResource):
     class Meta:
         model = ContentSubhead
-        fields = ('name', 'client')
+        fields = ('id', 'name', 'client')
         import_id_fields = ['id']
 
 # ContentSubhead 모델 관리자 등록
@@ -42,9 +42,9 @@ class ContentSubheadAdmin(ImportExportModelAdmin):
     def download_template(self, request):
         clients = Client.objects.all().order_by('name')
 
-        dataset = tablib.Dataset(headers=['name', 'client'])
+        dataset = tablib.Dataset(headers=['id', 'name', 'client'])
         first_client_id = clients.first().id if clients.exists() else 1
-        dataset.append(['예시 글주제', first_client_id])
+        dataset.append(['', '예시 글주제', first_client_id])
         dataset.title = '글주제'
 
         note = tablib.Dataset(headers=['client_id', 'client_name'])
