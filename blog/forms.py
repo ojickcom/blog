@@ -1,3 +1,5 @@
+import re
+
 from django import forms
 
 from .models import Blog, Client, KeywordGroup, ShoppingKeyword
@@ -43,6 +45,7 @@ class BlogForm(forms.ModelForm):
 
     def clean_content(self):
         content = self.cleaned_data["content"]
+        content = re.sub(r'\[?이미지\s*위치\s*\d+\]?', '', content).strip()
         if len(content) < 400:
             raise forms.ValidationError("내용은 400자 이상이어야 합니다.")
         return content
