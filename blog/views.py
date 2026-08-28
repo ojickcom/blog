@@ -52,6 +52,12 @@ def blog_list_completed(request):
     
     blogs_completed = blogs_query.order_by('-written_date')
 
+    # 홀수 유지: 짝수이면 가장 최근 글 제외
+    if blogs_completed.count() % 2 == 0:
+        newest = blogs_completed.first()
+        if newest:
+            blogs_completed = blogs_completed.exclude(pk=newest.pk)
+
     # 페이지네이션 설정 (한 페이지에 60개 항목)
     paginator = Paginator(blogs_completed, 60)
     page_number = request.GET.get('page')
