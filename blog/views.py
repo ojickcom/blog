@@ -82,7 +82,7 @@ def blog_list_completed(request):
 def delete_old_completed_blogs(request):
     """일주일이 지난 완료 글 일괄 삭제."""
     selected_client_name = request.POST.get('client')
-    cutoff_date = timezone.now() - timedelta(days=7)
+    cutoff_date = timezone.now() - timedelta(days=5)
 
     blogs_query = Blog.objects.filter(
         blog_write=True,
