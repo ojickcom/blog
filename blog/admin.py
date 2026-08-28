@@ -5,7 +5,7 @@ from django.http import HttpResponse
 from django.urls import path
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
-from .models import Blog, BlogCopyCount, Client, ContentSubhead, NumberCharacter, TalkStyle, ContentAspect,  ShoppingKeyword, KeywordClick, Client, Expense, KeywordGroup
+from .models import Blog, BlogCopyCount, Client, ContentSubhead, NumberCharacter, TalkStyle, ContentAspect,  ShoppingKeyword, KeywordClick, Client, Expense, KeywordGroup, SiteConfig
 
 # Client 모델 관리자 등록 (이전과 동일)
 @admin.register(Client)
@@ -139,3 +139,13 @@ class BlogCopyCountAdmin(admin.ModelAdmin):
 
 admin.site.register(Expense, ExpenseAdmin)
 admin.site.register(KeywordGroup)
+
+@admin.register(SiteConfig)
+class SiteConfigAdmin(admin.ModelAdmin):
+    fields = ('auto_delete_enabled',)
+
+    def has_add_permission(self, request):
+        return not SiteConfig.objects.exists()
+
+    def has_delete_permission(self, request, obj=None):
+        return False

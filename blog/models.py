@@ -232,6 +232,26 @@ class BlogCopyCount(models.Model):
     def __str__(self):
         return f"{self.blog.b_title or self.blog.title} - {self.copy_date}: {self.copy_count}회"
     
+class SiteConfig(models.Model):
+    auto_delete_enabled = models.BooleanField(default=True, verbose_name="완료글 자동 삭제 활성화")
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def get(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
+
+    class Meta:
+        verbose_name = "사이트 설정"
+        verbose_name_plural = "사이트 설정"
+
+    def __str__(self):
+        return "사이트 설정"
+
+
 class Expense(models.Model):
     name = models.CharField(max_length=200, verbose_name="비용 이름")
     price = models.IntegerField(verbose_name="가격")
